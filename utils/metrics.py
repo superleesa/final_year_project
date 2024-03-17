@@ -3,15 +3,26 @@ from torchmetrics.image import StructuralSimilarityIndexMeasure
 from skimage.io import imread
 from skimage.transform import resize
 
+from typing import Sequence
+
+def multiply(array: Sequence[int]):
+    output = 1
+    for num in array:
+        output *= num
+    return output
+
 def mse_per_sample(predicted, true):
-    num_piexels_per_sample = (predicted.size[1]*predicted.size[2]*predicted.size[3])
-    return ((predicted - true)**2).sum(0) / num_piexels_per_sample
+    # batch_size, channels, height, width
+    print(true.shape)
+    num_pixels_per_sample = multiply(true.shape[1:])
+    dim = (1, 2, 3) if len(true.shape) == 4 else (1, 2)
+    return ((predicted - true)**2).sum(dim=dim) / num_pixels_per_sample
 
 def pnsr_per_sample(mse_per_sample):
     intensity_max = torch.tensor(1.0)
     return torch.log10(intensity_max / mse_per_sample)
 
-def ssim (predicted, true):
+def ssim(predicted, true):
     ssim_metric = StructuralSimilarityIndexMeasure()
     return ssim_metric(predicted, true)
 
