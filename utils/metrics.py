@@ -18,7 +18,7 @@ def mse_per_sample(predicted, true):
     dim = (1, 2, 3) if len(true.shape) == 4 else (1, 2)
     return ((predicted - true)**2).sum(dim=dim) / num_pixels_per_sample
 
-def pnsr_per_sample(mse_per_sample):
+def psnr_per_sample(mse_per_sample):
     intensity_max = torch.tensor(1.0)
     return torch.log10(intensity_max / mse_per_sample)
 
