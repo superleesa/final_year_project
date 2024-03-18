@@ -5,6 +5,10 @@ from skimage.transform import resize
 
 from typing import Sequence
 
+
+MAX_INTENSITY = torch.tensor(1.0)  # should be 1 because image is normalized
+PSNR_CONSTANT = 20 * torch.log10(MAX_INTENSITY)
+
 def multiply(array: Sequence[int]):
     output = 1
     for num in array:
@@ -13,14 +17,12 @@ def multiply(array: Sequence[int]):
 
 def mse_per_sample(predicted, true):
     # batch_size, channels, height, width
-    print(true.shape)
     num_pixels_per_sample = multiply(true.shape[1:])
     dim = (1, 2, 3) if len(true.shape) == 4 else (1, 2)
     return ((predicted - true)**2).sum(dim=dim) / num_pixels_per_sample
 
 def psnr_per_sample(mse_per_sample):
-    intensity_max = torch.tensor(1.0)
-    return torch.log10(intensity_max / mse_per_sample)
+    return PSNR_CONSTANT - 10*torch.log10(mse_per_sample)
 
 def ssim(predicted, true):
     ssim_metric = StructuralSimilarityIndexMeasure()
