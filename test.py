@@ -26,6 +26,6 @@ def test_ssim():
     # we might need to change the padding size later on
     gt_tensor_1 = torch.rand([3, 3, 256, 256])
     predicted_tensor_1 = gt_tensor_1 * 0.75
-    ssim_value_1 = metrics.ssim(predicted_tensor_1, gt_tensor_1)
+    ssim_value_1 = metrics.ssim_per_sample(predicted_tensor_1, gt_tensor_1)
     assert ssim_value_1.shape == torch.Size([3]), f"Test case 1 failed: SSIM value is incorrect: {ssim_value_1}"
 

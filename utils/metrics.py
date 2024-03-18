@@ -24,7 +24,7 @@ def mse_per_sample(predicted, true):
 def psnr_per_sample(mse_per_sample):
     return PSNR_CONSTANT - 10*torch.log10(mse_per_sample)
 
-def ssim(predicted, true):
+def ssim_per_sample(predicted, true):
     return structural_similarity_index_measure(predicted, true, reduction="none")
 
 def loe(predicted_path, true_path):
