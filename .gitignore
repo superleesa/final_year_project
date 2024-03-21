@@ -1,3 +1,15 @@
 .ipynb_checkpoints
 Data/*
 !*.gitkeep
+
+# cloned repo
+src/toenet/
+
+# cache
+__pycache__/
+
+# Editors
+.vscode/
+.idea/
+
+.DS_Store
