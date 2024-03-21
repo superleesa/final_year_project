@@ -11,10 +11,11 @@ import torch
 class SIEDataset(Dataset):
     # load all images at once
     # we use float32 for the image data type
-    def __init__(self, sand_dust_images: List[Image], ground_truth_images: List[Image], w_threshold: int, h_threshold: int):
+    def __init__(self, sand_dust_images: List[Image], ground_truth_images: List[Image], image_names: List[str], w_threshold: int, h_threshold: int):
         assert len(sand_dust_images) == len(ground_truth_images), "the number of sand dust images and ground truth images must be the same"
         self.sand_dust_images = sand_dust_images
         self.ground_truth_images = ground_truth_images
+        self.image_names = image_names
         self.w_threshold = w_threshold
         self.h_threshold = h_threshold
 
@@ -28,11 +29,12 @@ class SIEDataset(Dataset):
         image = torch.from_numpy(image).float()
         return image
 
-    def __getitem__(self, idx) -> (torch.Tensor, torch.Tensor):
+    def __getitem__(self, idx) -> tuple[torch.Tensor, torch.Tensor, str]:
         sand_dust_image = self.preprocess(self.sand_dust_images[idx])
         ground_truth_image = self.preprocess(self.ground_truth_images[idx])
+        image_name = self.image_names[idx]
 
-        return sand_dust_image, ground_truth_image
+        return sand_dust_image, ground_truth_image, image_name
 
 def crop_image(image, w_threshold, h_threshold):
     assert image.width >= w_threshold and image.height >= h_threshold, "to crop, image size must be bigger than or equal to the threshold values"
