@@ -9,15 +9,15 @@ import torch
 import random
 import os
 from PIL import Image
+import cv2
 
 
 SaveImageType = Literal["all", "sample", "no"]
 
 
 def save_image(image: np.ndarray, image_name: str, save_dir: str) -> None:
-    save_path = os.path.join(save_dir, image_name+".png")
-    image = Image.fromarray(image)
-    image.save(save_dir)
+    save_path = os.path.join(save_dir, image_name+".jpg")
+    cv2.imwrite(save_path, image)
 
 
 def validate(dataloader: DataLoader, save_dir: "str", save_images: SaveImageType = "sample") -> tuple[np.ndarray, np.ndarray]:
@@ -32,9 +32,9 @@ def validate(dataloader: DataLoader, save_dir: "str", save_images: SaveImageType
     model.eval()
 
     psnr_output_batches: List[np.ndarray] = []
-    ssim__output_batches = List[np.ndarray] = []
+    ssim__output_batches: List[np.ndarray] = []
 
-    for sand_dust_images, ground_truth_images, image_names in range(len(dataloader)):
+    for sand_dust_images, ground_truth_images, image_names in dataloader:
         with torch.no_grad():
             sand_dust_images = sand_dust_images.cuda()
             denoised_images = model(sand_dust_images)
@@ -51,7 +51,8 @@ def validate(dataloader: DataLoader, save_dir: "str", save_images: SaveImageType
                 denoised_images = denoised_images.cpu().numpy()
                 denoised_images = np.transpose(denoised_images, axes=[0, 2, 3, 1]).astype('float32')
                 denoised_images = np.clip(denoised_images*255, 0.0, 255.0)  # normalize back to 0~255
-                map(lambda denoised_image, image_path: save_image(denoised_image, image_name, save_dir), zip(denoised_images, image_names))
+                for denoised_image, image_name in zip(denoised_images, image_names):
+                    save_image(denoised_image, image_name, save_dir)
             
             elif save_images == "sample":
                 image_idx = random.randint(0, len(denoised_images)-1)
