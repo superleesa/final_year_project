@@ -13,7 +13,8 @@ from pathlib import Path
 
 def get_color_loss(denoised_images: torch.Tensor, ground_truth_images: torch.Tensor, cos_sim_func: CosineSimilarity):
     batch_size, _, height, width = denoised_images.size()
-    return 1 - cos_sim_func(denoised_images, ground_truth_images).mean()
+    one = torch.tensor(1).cuda()
+    return one - cos_sim_func(denoised_images, ground_truth_images).mean()
 
 def train(dataset: Dataset, checkpoint_dir: str):
     is_gpu = 1
@@ -36,7 +37,10 @@ def train(dataset: Dataset, checkpoint_dir: str):
 
     for epoch in range(num_epochs):
         dataloader: DataLoader = DataLoader(dataset, batch_size=config["batch_size"], shuffle=True)
-        for sand_storm_images, ground_truth_images, _ in dataloader:
+        for idx, (sand_storm_images, ground_truth_images, _) in enumerate(dataloader):
+            sand_storm_images = sand_storm_images.cuda()
+            ground_truth_images = ground_truth_images.cuda()
+
             optimizer.zero_grad()
             denoised_images = base_model(sand_storm_images)
             color_loss = get_color_loss(denoised_images, ground_truth_images, color_loss_criterion)
@@ -45,6 +49,9 @@ def train(dataset: Dataset, checkpoint_dir: str):
             loss_records.append(total_loss)
             total_loss.backward()
             optimizer.step()
+            
+            if idx % 50 == 0:
+                print(total_loss)
 
     # save
     torch.save(base_model.state_dict(), f"{checkpoint_dir}/sft_toenet_on_sie.pth")
