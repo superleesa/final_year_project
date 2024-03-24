@@ -7,6 +7,8 @@ import pickle as pkl
 from torch.nn import MSELoss, CosineSimilarity
 from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
+import os
+from pathlib import Path
 
 
 def get_color_loss(denoised_images: torch.Tensor, ground_truth_images: torch.Tensor, cos_sim_func: CosineSimilarity):
@@ -15,13 +17,16 @@ def get_color_loss(denoised_images: torch.Tensor, ground_truth_images: torch.Ten
 
 def train(dataset: Dataset, checkpoint_dir: str):
     is_gpu = 1
-    base_model = load_checkpoint(checkpoint_dir, is_gpu)
+
+    base_model, _, _ = load_checkpoint(checkpoint_dir, is_gpu)
+
     base_model.train()
     color_loss_criterion = CosineSimilarity(dim=1) # color channel
     l2_criterion= MSELoss()
 
     # load params from yml file
-    with open("config.yml") as ymlfile:
+    config_path = Path(__file__).parent / "config.yml"
+    with open(config_path) as ymlfile:
         config = yaml.safe_load(ymlfile)
     optimizer = optim.Adam(base_model.parameters(), lr=config["adam_lr"])
     loss_gamma1 = config["loss_gamma1"]
@@ -31,7 +36,7 @@ def train(dataset: Dataset, checkpoint_dir: str):
 
     for epoch in range(num_epochs):
         dataloader: DataLoader = DataLoader(dataset, batch_size=config["batch_size"], shuffle=True)
-        for sand_storm_images, ground_truth_images in dataloader:
+        for sand_storm_images, ground_truth_images, _ in dataloader:
             optimizer.zero_grad()
             denoised_images = base_model(sand_storm_images)
             color_loss = get_color_loss(denoised_images, ground_truth_images, color_loss_criterion)
