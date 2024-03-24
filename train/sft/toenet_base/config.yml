@@ -1,0 +1,7 @@
+loss_gamma1: 0.8
+loss_gamma2: 0.2
+num_epochs: 30
+adam_lr: 0.001
+#step_lr_step_size: 30
+#step_lr_gamma: 0.1
+batch_size: 4
