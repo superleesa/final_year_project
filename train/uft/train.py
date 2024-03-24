@@ -4,9 +4,9 @@ from torch.utils.data import DataLoader, Dataset
 import torch.nn as nn
 import yaml
 import pickle as pkl
-
-from src.tonet.TOENet import TOENet
-from src.tonet.test import load_checkpoint
+from pathlib import Path
+from src.toenet.TOENet import TOENet
+from src.toenet.test import load_checkpoint
 
 
 def make_discriminator_model():
@@ -37,7 +37,8 @@ def train(dataset: Dataset, checkpoint_dir: str):
     discriminator_model.train()
 
     # load params from yml file
-    with open("config.yml") as ymlfile:
+    config_path = Path(__file__).parent / "config.yml"
+    with open(config_path) as ymlfile:
         config = yaml.safe_load(ymlfile)
 
     optimizer = optim.Adam(base_model.parameters(), lr=config["adam_lr"])
@@ -45,11 +46,14 @@ def train(dataset: Dataset, checkpoint_dir: str):
     num_epochs = config["num_epochs"]
     criterion = torch.nn.BCELoss()
     loss_records = []
+    print_loss_interval = config["print_loss_interval"]
 
     for epoch in range(num_epochs):
         dataloader: DataLoader = DataLoader(dataset, batch_size=config["batch_size"], shuffle=True)
 
-        for sand_storm_images, normal_images in dataloader:
+        for idx, (sand_storm_images, normal_images, _) in enumerate(dataloader):
+            sand_storm_images = sand_storm_images.cuda()
+            normal_images = normal_images.cuda()
             optimizer.zero_grad()
             denoised_images = base_model(sand_storm_images)
             predicted_class_labels_denoised = discriminator_model(denoised_images)
@@ -59,6 +63,9 @@ def train(dataset: Dataset, checkpoint_dir: str):
             loss.backward()
             optimizer.step()
             scheduler.step()
+
+            if idx % print_loss_interval == 0:
+                print(loss)
 
     # save
     torch.save(base_model.state_dict(), f"{checkpoint_dir}/base_model.pth")

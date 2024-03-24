@@ -5,3 +5,4 @@ adam_lr: 0.001
 step_lr_step_size: 30
 step_lr_gamma: 0.1
 batch_size: 64
+print_loss_interval = 100
