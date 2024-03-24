@@ -5,8 +5,8 @@ import torch.nn as nn
 import yaml
 import pickle as pkl
 from torch.nn import MSELoss, CosineSimilarity
-from src.tonet.TOENet import TOENet
-from src.tonet.test import load_checkpoint
+from src.toenet.TOENet import TOENet
+from src.toenet.test import load_checkpoint
 
 
 def get_color_loss(denoised_images: torch.Tensor, ground_truth_images: torch.Tensor, cos_sim_func: CosineSimilarity):
