@@ -9,12 +9,13 @@ from pathlib import Path
 from PIL import Image
 
 class ImageDataset(Dataset):
+    W_THRESHOLD = 440
+    H_THRESHOLD = 330
+    
     def __init__(self, sand_dust_images: List[Image.Image], image_names: List[str], ground_truth_images: Optional[List[Image.Image]] = None):
         self.sand_dust_images = sand_dust_images
         self.ground_truth_images = ground_truth_images
         self.image_names = image_names
-        self.W_THRESHOLD = 440
-        self.H_THRESHOLD = 330
         self.is_paired = ground_truth_images is not None
 
     def __len__(self):
