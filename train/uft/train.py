@@ -46,16 +46,13 @@ def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[li
     with open(config_path) as ymlfile:
         config = yaml.safe_load(ymlfile)
 
-    # discriminator settings
-    discriminator_optimizer = optim.Adam(base_model.parameters(), lr=config["adam_lr"])
-    discriminator_scheduler = optim.lr_scheduler.StepLR(discriminator_optimizer, step_size=config["step_lr_step_size"], gamma=config["step_lr_gamma"])
-    discriminator_criterion = torch.nn.BCELoss()
-
     # denoiser settings
-    denoiser_optimizer = optim.Adam(base_model.parameters(), lr=config["adam_lr"])
-    denoiser_scheduler = optim.lr_scheduler.StepLR(denoiser_optimizer, step_size=config["step_lr_step_size"],
-                                                        gamma=config["step_lr_gamma"])
+    denoiser_optimizer = optim.Adam(base_model.parameters(), lr=config["denoiser_adam_lr"])
     denoiser_criterion = torch.nn.BCELoss()
+
+    # discriminator settings
+    discriminator_optimizer = optim.Adam(base_model.parameters(), lr=config["discriminator_adam_lr"])
+    discriminator_criterion = torch.nn.BCELoss()
 
     num_epochs = config["num_epochs"]
     discriminator_loss_records, denoiser_loss_records = [], []
@@ -77,11 +74,9 @@ def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[li
 
             denoiser_loss.backward()
             denoiser_optimizer.step()
-            denoiser_scheduler.step()
 
             discriminator_loss.backward()
             discriminator_optimizer.step()
-            discriminator_scheduler.step()
 
             denoiser_loss_records.append(denoiser_loss)
             discriminator_loss_records.append(discriminator_loss)
