@@ -22,14 +22,19 @@ def make_discriminator_model():
     )
 
 
-def discriminator_loss(cross_entropy: nn.BCELoss, denoised_images: torch.Tensor, normal_images: torch.Tensor):
-    real_loss = cross_entropy(torch.ones_like(denoised_images), denoised_images)
-    fake_loss = cross_entropy(torch.zeros_like(normal_images), normal_images)
+def get_discriminator_loss(cross_entropy: nn.BCELoss, denoised_images_predicted: torch.Tensor, normal_images_predicted: torch.Tensor):
+    real_loss = cross_entropy(torch.ones_like(denoised_images_predicted), denoised_images_predicted)
+    fake_loss = cross_entropy(torch.zeros_like(normal_images_predicted), normal_images_predicted)
     total_loss = real_loss + fake_loss
     return total_loss
 
 
-def train(dataset: Dataset, checkpoint_dir: str):
+def get_denoiser_loss(denoiser_criterion: nn.BCELoss, denoised_images_predicted: torch.Tensor):
+    # ensure that the denoised images are classified as normal
+    return denoiser_criterion(torch.ones_like(denoised_images_predicted), denoised_images_predicted)
+
+
+def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[list, list]]:
     is_gpu = 1
     base_model = load_checkpoint(checkpoint_dir, is_gpu)
     discriminator_model = make_discriminator_model()
@@ -41,11 +46,19 @@ def train(dataset: Dataset, checkpoint_dir: str):
     with open(config_path) as ymlfile:
         config = yaml.safe_load(ymlfile)
 
-    optimizer = optim.Adam(base_model.parameters(), lr=config["adam_lr"])
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=config["step_lr_step_size"], gamma=config["step_lr_gamma"])
+    # discriminator settings
+    discriminator_optimizer = optim.Adam(base_model.parameters(), lr=config["adam_lr"])
+    discriminator_scheduler = optim.lr_scheduler.StepLR(discriminator_optimizer, step_size=config["step_lr_step_size"], gamma=config["step_lr_gamma"])
+    discriminator_criterion = torch.nn.BCELoss()
+
+    # denoiser settings
+    denoiser_optimizer = optim.Adam(base_model.parameters(), lr=config["adam_lr"])
+    denoiser_scheduler = optim.lr_scheduler.StepLR(denoiser_optimizer, step_size=config["step_lr_step_size"],
+                                                        gamma=config["step_lr_gamma"])
+    denoiser_criterion = torch.nn.BCELoss()
+
     num_epochs = config["num_epochs"]
-    criterion = torch.nn.BCELoss()
-    loss_records = []
+    discriminator_loss_records, denoiser_loss_records = [], []
     print_loss_interval = config["print_loss_interval"]
 
     for epoch in range(num_epochs):
@@ -54,21 +67,33 @@ def train(dataset: Dataset, checkpoint_dir: str):
         for idx, (sand_storm_images, normal_images, _) in enumerate(dataloader):
             sand_storm_images = sand_storm_images.cuda()
             normal_images = normal_images.cuda()
-            optimizer.zero_grad()
+            discriminator_optimizer.zero_grad()
             denoised_images = base_model(sand_storm_images)
-            predicted_class_labels_denoised = discriminator_model(denoised_images)
-            predicted_class_labels_normal = discriminator_model(normal_images)
-            loss = discriminator_loss(criterion, predicted_class_labels_denoised, predicted_class_labels_normal)
-            loss_records.append(loss)
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
+
+            denoised_images_predicted_labels = discriminator_model(denoised_images)
+            normal_images_predicted_labels = discriminator_model(normal_images)
+            denoiser_loss = get_denoiser_loss(denoiser_criterion, denoised_images_predicted_labels)
+            discriminator_loss = get_discriminator_loss(discriminator_criterion, denoised_images_predicted_labels, normal_images_predicted_labels)
+
+            denoiser_loss.backward()
+            denoiser_optimizer.step()
+            denoiser_scheduler.step()
+
+            discriminator_loss.backward()
+            discriminator_optimizer.step()
+            discriminator_scheduler.step()
+
+            denoiser_loss_records.append(denoiser_loss)
+            discriminator_loss_records.append(discriminator_loss)
 
             if idx % print_loss_interval == 0:
-                print(loss)
+                print(denoiser_loss)
+                print(discriminator_loss)
 
     # save
     torch.save(base_model.state_dict(), f"{checkpoint_dir}/base_model.pth")
-    with open(f"{checkpoint_dir}/loss_records.pickle", "wb") as f:
-        pkl.dump(loss_records, f)
-    return base_model, loss_records
+    with (open(f"{checkpoint_dir}/denoiser_loss_records.pickle", "wb") as denoiser_record_file,
+          open(f"{checkpoint_dir}/discriminator_loss_records.pickle", "wb") as discriminator_record_file):
+        pkl.dump(denoiser_loss_records, denoiser_record_file)
+        pkl.dump(discriminator_loss_records, discriminator_record_file)
+    return base_model, (denoiser_loss_records, discriminator_loss_records)
