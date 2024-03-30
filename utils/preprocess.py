@@ -1,40 +1,42 @@
-from typing import List
-
-from PIL.Image import Image
+from typing import List, Optional, Tuple, Union
 import numpy as np
 from torch.utils.data import Dataset
 import random
 from tqdm import tqdm
 import torch
+import os
+from pathlib import Path
+from PIL import Image
 
-
-class SIEDataset(Dataset):
-    # load all images at once
-    # we use float32 for the image data type
-    def __init__(self, sand_dust_images: List[Image], ground_truth_images: List[Image], image_names: List[str], w_threshold: int, h_threshold: int):
-        assert len(sand_dust_images) == len(ground_truth_images), "the number of sand dust images and ground truth images must be the same"
+class ImageDataset(Dataset):
+    W_THRESHOLD = 440
+    H_THRESHOLD = 330
+    
+    def __init__(self, sand_dust_images: List[Image.Image], image_names: List[str], ground_truth_images: Optional[List[Image.Image]] = None):
         self.sand_dust_images = sand_dust_images
         self.ground_truth_images = ground_truth_images
         self.image_names = image_names
-        self.w_threshold = w_threshold
-        self.h_threshold = h_threshold
+        self.is_paired = ground_truth_images is not None
 
     def __len__(self):
         return len(self.sand_dust_images)
 
     def preprocess(self, image: Image) -> torch.Tensor:
-        image = resize_image(image, self.w_threshold, self.h_threshold)
+        image = resize_image(image, self.W_THRESHOLD, self.H_THRESHOLD)
         image = np.asarray(image) / 255.0
         image = np.transpose(image, axes=[2, 0, 1]).astype('float32')  # to C, H, W
         image = torch.from_numpy(image).float()
         return image
 
-    def __getitem__(self, idx) -> tuple[torch.Tensor, torch.Tensor, str]:
+    def __getitem__(self, idx) -> Union[Tuple[torch.Tensor, torch.Tensor, str], Tuple[torch.Tensor, str]]:
         sand_dust_image = self.preprocess(self.sand_dust_images[idx])
-        ground_truth_image = self.preprocess(self.ground_truth_images[idx])
         image_name = self.image_names[idx]
 
-        return sand_dust_image, ground_truth_image, image_name
+        if self.is_paired:
+            ground_truth_image = self.preprocess(self.ground_truth_images[idx])
+            return sand_dust_image, ground_truth_image, image_name
+        else:
+            return sand_dust_image, image_name
 
 def crop_image(image, w_threshold, h_threshold):
     assert image.width >= w_threshold and image.height >= h_threshold, "to crop, image size must be bigger than or equal to the threshold values"
@@ -90,3 +92,44 @@ def resize_image(image: Image, w_threshold: int, h_threshold: int) -> Image:
         image = stretch_image(image, w_threshold, h_threshold)
 
     return crop_image(image, w_threshold, h_threshold)
+
+def load_images_in_a_directory(directory_path):
+    images = []
+    image_names = []
+    print(os.listdir(directory_path))
+    for filename in os.listdir(directory_path):
+        if filename.endswith("png") or filename.endswith("jpg"):
+            image_path = os.path.join(directory_path, filename)
+            image = Image.open(image_path)
+            images.append(image)
+            image_names.append(filename)
+
+    return images, image_names
+
+def create_dataset(dataset_dir: str, save_dir: str, isPaired: bool):
+    '''"
+    dataset_dir: directory of the dataset (e.g. "Data/Synthetic_images/")
+    save_dir: directory to save the output (format: "Data/output/base_toenet_on_sie")
+    isUnpaired: whether it is paired Dataset or not.
+    '''
+    save_images = "all"
+    Path(save_dir).mkdir(parents=True, exist_ok=True)
+    
+    if isPaired:
+        gt_path = os.path.join(dataset_dir, "Ground_truth")
+        gt_images, gt_image_names = load_images_in_a_directory(gt_path)
+        gt_images = [gt_image for gt_image, _ in sorted(zip(gt_images, gt_image_names), key=lambda x: x[1])]
+
+        noisy_path = os.path.join(dataset_dir, "Sand_dust_images")
+        noisy_images, noisy_image_names = load_images_in_a_directory(noisy_path)
+        noisy_images = [noisy_image for noisy_image, _ in sorted(zip(noisy_images, noisy_image_names), key=lambda x: x[1])]
+        denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
+        dataset = ImageDataset(noisy_images, gt_images, denoised_image_file_names)
+    else:
+        noisy_path = os.path.join(dataset_dir, "Sand_dust_images")
+        noisy_images, noisy_image_names = load_images_in_a_directory(noisy_path)
+        noisy_images = [noisy_image for noisy_image, _ in sorted(zip(noisy_images, noisy_image_names), key=lambda x: x[1])]
+        denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
+        dataset = ImageDataset(noisy_images, denoised_image_file_names)
+
+    return dataset
