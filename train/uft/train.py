@@ -22,16 +22,20 @@ def make_discriminator_model():
     )
 
 
-def get_discriminator_loss(cross_entropy: nn.BCELoss, denoised_images_predicted: torch.Tensor, normal_images_predicted: torch.Tensor):
+def get_discriminator_loss(cross_entropy: nn.BCELoss, denoised_images_predicted: torch.Tensor, normal_images_predicted: torch.Tensor) -> torch.Tensor
     real_loss = cross_entropy(torch.ones_like(denoised_images_predicted), denoised_images_predicted)
     fake_loss = cross_entropy(torch.zeros_like(normal_images_predicted), normal_images_predicted)
     total_loss = real_loss + fake_loss
     return total_loss
 
 
-def get_denoiser_loss(denoiser_criterion: nn.BCELoss, denoised_images_predicted: torch.Tensor):
+def get_denoiser_loss(denoiser_criterion: nn.BCELoss, denoised_images_predicted: torch.Tensor,
+                      clip_min: float | None = None, clip_max: float | None = None) -> torch.Tensor:
     # ensure that the denoised images are classified as normal
-    return denoiser_criterion(torch.ones_like(denoised_images_predicted), denoised_images_predicted)
+    naive_loss = denoiser_criterion(torch.ones_like(denoised_images_predicted), denoised_images_predicted)
+    if clip_min is not None and clip_max is not None:
+        return torch.clip(naive_loss, clip_min, clip_max)
+    return naive_loss
 
 
 def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[list, list]]:
@@ -49,6 +53,8 @@ def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[li
     # denoiser settings
     denoiser_optimizer = optim.Adam(base_model.parameters(), lr=config["denoiser_adam_lr"])
     denoiser_criterion = torch.nn.BCELoss()
+    clip_min = config.get("clip_min")
+    clip_max = config.get("clip_max")
 
     # discriminator settings
     discriminator_optimizer = optim.Adam(base_model.parameters(), lr=config["discriminator_adam_lr"])
@@ -69,7 +75,7 @@ def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[li
 
             denoised_images_predicted_labels = discriminator_model(denoised_images)
             normal_images_predicted_labels = discriminator_model(normal_images)
-            denoiser_loss = get_denoiser_loss(denoiser_criterion, denoised_images_predicted_labels)
+            denoiser_loss = get_denoiser_loss(denoiser_criterion, denoised_images_predicted_labels, clip_min, clip_max)
             discriminator_loss = get_discriminator_loss(discriminator_criterion, denoised_images_predicted_labels, normal_images_predicted_labels)
 
             denoiser_loss.backward()
