@@ -22,15 +22,15 @@ def make_discriminator_model():
     )
 
 
-def get_discriminator_loss(cross_entropy: nn.BCELoss, denoised_images_predicted: torch.Tensor, normal_images_predicted: torch.Tensor) -> torch.Tensor
+def calc_discriminator_loss(cross_entropy: nn.BCELoss, denoised_images_predicted: torch.Tensor, normal_images_predicted: torch.Tensor) -> torch.Tensor
     real_loss = cross_entropy(torch.ones_like(denoised_images_predicted), denoised_images_predicted)
     fake_loss = cross_entropy(torch.zeros_like(normal_images_predicted), normal_images_predicted)
     total_loss = real_loss + fake_loss
     return total_loss
 
 
-def get_denoiser_loss(denoiser_criterion: nn.BCELoss, denoised_images_predicted: torch.Tensor,
-                      clip_min: float | None = None, clip_max: float | None = None) -> torch.Tensor:
+def calc_denoiser_loss(denoiser_criterion: nn.BCELoss, denoised_images_predicted: torch.Tensor,
+                       clip_min: float | None = None, clip_max: float | None = None) -> torch.Tensor:
     # ensure that the denoised images are classified as normal
     naive_loss = denoiser_criterion(torch.ones_like(denoised_images_predicted), denoised_images_predicted)
     if clip_min is not None and clip_max is not None:
@@ -57,7 +57,7 @@ def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[li
     clip_max = config.get("clip_max")
 
     # discriminator settings
-    discriminator_optimizer = optim.Adam(base_model.parameters(), lr=config["discriminator_adam_lr"])
+    discriminator_optimizer = optim.Adam(discriminator_model.parameters(), lr=config["discriminator_adam_lr"])
     discriminator_criterion = torch.nn.BCELoss()
 
     num_epochs = config["num_epochs"]
@@ -67,16 +67,17 @@ def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[li
     for epoch in range(num_epochs):
         dataloader: DataLoader = DataLoader(dataset, batch_size=config["batch_size"], shuffle=True)
 
-        for idx, (sand_storm_images, normal_images, _) in enumerate(dataloader):
-            sand_storm_images = sand_storm_images.cuda()
-            normal_images = normal_images.cuda()
-            discriminator_optimizer.zero_grad()
-            denoised_images = base_model(sand_storm_images)
+        for idx, (sand_dust_images, clear_images, _) in enumerate(dataloader):
+            sand_dust_images = sand_dust_images.cuda()
+            clear_images = clear_images.cuda()
 
-            denoised_images_predicted_labels = discriminator_model(denoised_images)
-            normal_images_predicted_labels = discriminator_model(normal_images)
-            denoiser_loss = get_denoiser_loss(denoiser_criterion, denoised_images_predicted_labels, clip_min, clip_max)
-            discriminator_loss = get_discriminator_loss(discriminator_criterion, denoised_images_predicted_labels, normal_images_predicted_labels)
+            discriminator_optimizer.zero_grad()
+            denoised_images = base_model(sand_dust_images)
+
+            denoised_images_predicted_labels = discriminator_model(denoised_images.detach())
+            normal_images_predicted_labels = discriminator_model(clear_images)
+            denoiser_loss = calc_denoiser_loss(denoiser_criterion, denoised_images_predicted_labels, clip_min, clip_max)
+            discriminator_loss = calc_discriminator_loss(discriminator_criterion, denoised_images_predicted_labels, normal_images_predicted_labels)
 
             denoiser_loss.backward()
             denoiser_optimizer.step()
