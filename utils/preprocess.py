@@ -1,135 +1,137 @@
 from typing import List, Optional, Tuple, Union
 import numpy as np
 from torch.utils.data import Dataset
-import random
-from tqdm import tqdm
 import torch
 import os
-from pathlib import Path
-from PIL import Image
+from torchvision.transforms import v2
+import random
+import cv2
 
-class ImageDataset(Dataset):
-    W_THRESHOLD = 440
-    H_THRESHOLD = 330
-    
-    def __init__(self, sand_dust_images: List[Image.Image], image_names: List[str], ground_truth_images: Optional[List[Image.Image]] = None):
+
+# dataset directory constants
+NOISY_IMAGE_DIR_NAME = "noisy"
+GROUND_TRUTH_IMAGE_DIR_NAME = "ground_truth"
+CLEAR_IMAGE_DIR_NAME = "clear"
+
+
+# image size constants
+W_THRESHOLD = 440
+H_THRESHOLD = 330
+
+train_transform = v2.Compose([
+    v2.Lambda(lambda image: np.transpose(image, axes=[2, 0, 1]).astype('float32')),
+    v2.ToTensor(),
+    v2.RandomResizedCrop((W_THRESHOLD, H_THRESHOLD)),
+    v2.RandomHorizontalFlip(),
+    v2.RandomVerticalFlip(),
+    v2.RandomRotation(degrees=90),
+])
+
+eval_transform = v2.Compose([
+    v2.Lambda(lambda image: np.transpose(image, axes=[2, 0, 1]).astype('float32')),
+    v2.ToTensor(),
+    v2.Resize((W_THRESHOLD, H_THRESHOLD)),
+])
+
+
+class PairedDataset(Dataset):
+    def __init__(self, sand_dust_images: List[np.ndarray],
+                 ground_truth_images: List[np.ndarray],
+                 output_image_names: List[str],
+                 transformer: v2.Transform.Compose) -> None:
+        """
+        output_image_names: should only be the name of the image without the extension and the path
+        """
         self.sand_dust_images = sand_dust_images
         self.ground_truth_images = ground_truth_images
-        self.image_names = image_names
-        self.is_paired = ground_truth_images is not None
+        self.output_image_names = output_image_names
 
-    def __len__(self):
+        self.transformer = transformer
+
+    def __len__(self) -> int:
         return len(self.sand_dust_images)
 
-    def preprocess(self, image: Image) -> torch.Tensor:
-        image = resize_image(image, self.W_THRESHOLD, self.H_THRESHOLD)
-        image = np.asarray(image) / 255.0
-        image = np.transpose(image, axes=[2, 0, 1]).astype('float32')  # to C, H, W
-        image = torch.from_numpy(image).float()
-        return image
-
-    def __getitem__(self, idx) -> Union[Tuple[torch.Tensor, torch.Tensor, str], Tuple[torch.Tensor, str]]:
-        sand_dust_image = self.preprocess(self.sand_dust_images[idx])
-        image_name = self.image_names[idx]
-
-        if self.is_paired:
-            ground_truth_image = self.preprocess(self.ground_truth_images[idx])
-            return sand_dust_image, ground_truth_image, image_name
-        else:
-            return sand_dust_image, image_name
-
-def crop_image(image, w_threshold, h_threshold):
-    assert image.width >= w_threshold and image.height >= h_threshold, "to crop, image size must be bigger than or equal to the threshold values"
-
-    # choose top and right randomly -> bottom and left automatically determined
-    top = random.randint(0, image.height - h_threshold)  # inclusive
-    left = random.randint(0, image.width - w_threshold)
-
-    bottom = top + h_threshold
-    right = left + w_threshold
-
-    return image.crop((left, top, right, bottom))
+    def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        sand_dust_image = self.transformer(self.sand_dust_images[idx])
+        ground_truth_image = self.transformer(self.ground_truth_images[idx])
+        return sand_dust_image, ground_truth_image, self.output_image_names[idx]
 
 
-def is_image_smaller_than_threshold(image, w_threshold, h_threshold) -> bool:
-    return image.width < w_threshold or image.height < h_threshold
+class UnpairedDataset:
+    """This class must be instantiated for each epoch to change pairs."""
+    def __init__(self, sand_dust_images: List[np.ndarray],
+                 clear_images: List[np.array],
+                 output_image_names: List[str],
+                 transformer: v2.Transform.Compose) -> None:
+        self.sand_dust_images = sand_dust_images
+        self.clear_images = clear_images
+        self.output_image_names = output_image_names
+
+        self.transformer = transformer
+
+        # generate random pairs
+        random.shuffle(self.sand_dust_images)
+        random.shuffle(self.clear_images)
+
+    def __len__(self) -> int:
+        return len(self.sand_dust_images)
+
+    def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor]:
+        sand_dust_image = self.transformer(self.sand_dust_images[idx].copy())
+        clear_image = self.transformer(self.sand_dust_images[idx].copy())
+        return sand_dust_image, clear_image, self.output_image_names[idx]
 
 
-def stretch_image(image, w_threshold, h_threshold):
-    aspect_ratio = h_threshold / w_threshold
-
-    if h_threshold - image.height < 0:
-        resize_based_on_width = True
-    elif w_threshold - image.width < 0:
-        resize_based_on_width = False
-    else:
-        # resize based on whichever the difference is smaller
-        resize_based_on_width = np.argmin([w_threshold - image.width, h_threshold - image.height])
-
-    if resize_based_on_width:
-        new_w = w_threshold
-        new_h = int(new_w * aspect_ratio)
-    else:
-        new_h = h_threshold
-        new_w = int(new_h / aspect_ratio)
-
-    return image.resize((new_w, new_h))
-
-
-def resize_images(images, w_threshold, h_threshold):
-    resized_images = []
-    for image in tqdm(images):
-        if is_image_smaller_than_threshold(image, w_threshold, h_threshold):
-            image = stretch_image(image, w_threshold, h_threshold)
-
-        new_image = crop_image(image, w_threshold, h_threshold)
-        resized_images.append(new_image)
-
-    return resized_images
-
-def resize_image(image: Image, w_threshold: int, h_threshold: int) -> Image:
-    if is_image_smaller_than_threshold(image, w_threshold, h_threshold):
-        image = stretch_image(image, w_threshold, h_threshold)
-
-    return crop_image(image, w_threshold, h_threshold)
-
-def load_images_in_a_directory(directory_path):
+def load_images_in_a_directory(directory_path: str) -> tuple[List[np.ndarray], List[str]]:
     images = []
     image_names = []
     print(os.listdir(directory_path))
     for filename in os.listdir(directory_path):
         if filename.endswith("png") or filename.endswith("jpg"):
             image_path = os.path.join(directory_path, filename)
-            image = Image.open(image_path)
+            image = cv2.imread(image_path)
+
             images.append(image)
             image_names.append(filename)
 
     return images, image_names
 
-def create_dataset(dataset_dir: str, save_dir: str, isPaired: bool):
-    '''"
+
+def sort_image_by_filenames(images: List[np.ndarray], image_names: List[str]) -> List[np.ndarray]:
+    return [image for image, _ in sorted(zip(images, image_names), key=lambda x: x[1])]
+
+def create_paired_dataset(dataset_dir: str, is_train=False) -> PairedDataset:
+    """
     dataset_dir: directory of the dataset (e.g. "Data/Synthetic_images/")
-    save_dir: directory to save the output (format: "Data/output/base_toenet_on_sie")
-    isUnpaired: whether it is paired Dataset or not.
-    '''
-    save_images = "all"
-    Path(save_dir).mkdir(parents=True, exist_ok=True)
-    
-    if isPaired:
-        gt_path = os.path.join(dataset_dir, "Ground_truth")
-        gt_images, gt_image_names = load_images_in_a_directory(gt_path)
-        gt_images = [gt_image for gt_image, _ in sorted(zip(gt_images, gt_image_names), key=lambda x: x[1])]
+    """
+    noisy_path = os.path.join(dataset_dir, NOISY_IMAGE_DIR_NAME)
+    noisy_images, noisy_image_names = load_images_in_a_directory(noisy_path)
+    noisy_images = sort_image_by_filenames(noisy_images, noisy_image_names)
 
-        noisy_path = os.path.join(dataset_dir, "Sand_dust_images")
-        noisy_images, noisy_image_names = load_images_in_a_directory(noisy_path)
-        noisy_images = [noisy_image for noisy_image, _ in sorted(zip(noisy_images, noisy_image_names), key=lambda x: x[1])]
-        denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
-        dataset = ImageDataset(noisy_images, gt_images, denoised_image_file_names)
-    else:
-        noisy_path = os.path.join(dataset_dir, "Sand_dust_images")
-        noisy_images, noisy_image_names = load_images_in_a_directory(noisy_path)
-        noisy_images = [noisy_image for noisy_image, _ in sorted(zip(noisy_images, noisy_image_names), key=lambda x: x[1])]
-        denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
-        dataset = ImageDataset(noisy_images, denoised_image_file_names)
+    gt_path = os.path.join(dataset_dir, GROUND_TRUTH_IMAGE_DIR_NAME)
+    gt_images, gt_image_names = load_images_in_a_directory(gt_path)
+    gt_images = [gt_image for gt_image, _ in sorted(zip(gt_images, gt_image_names), key=lambda x: x[1])]
 
+    denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
+
+    transformer = train_transform if is_train else eval_transform
+    dataset = PairedDataset(noisy_images, gt_images, denoised_image_file_names, transformer)
     return dataset
+
+
+def create_unpaired_dataset(dataset_dir: str, num_datasets: int = 1, is_train=False) -> List[UnpairedDataset]:
+    """
+    dataset_dir: directory of the dataset (e.g. "Data/Synthetic_images/")
+    """
+    noisy_path = os.path.join(dataset_dir, CLEAR_IMAGE_DIR_NAME)
+    noisy_images, noisy_image_names = load_images_in_a_directory(noisy_path)
+    noisy_images = sort_image_by_filenames(noisy_images, noisy_image_names)
+
+    clear_path = os.path.join(dataset_dir, CLEAR_IMAGE_DIR_NAME)
+    clear_images, clear_image_names = load_images_in_a_directory(clear_path)
+    clear_images = sort_image_by_filenames(clear_images, clear_image_names)
+
+    denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
+
+    transformer = train_transform if is_train else eval_transform
+    return [UnpairedDataset(noisy_images, clear_images, denoised_image_file_names, transformer) for _ in range(num_datasets)]
