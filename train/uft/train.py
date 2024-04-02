@@ -22,7 +22,7 @@ def make_discriminator_model():
     )
 
 
-def calc_discriminator_loss(cross_entropy: nn.BCELoss, denoised_images_predicted: torch.Tensor, normal_images_predicted: torch.Tensor) -> torch.Tensor
+def calc_discriminator_loss(cross_entropy: nn.BCELoss, denoised_images_predicted: torch.Tensor, normal_images_predicted: torch.Tensor) -> torch.Tensor:
     real_loss = cross_entropy(torch.ones_like(denoised_images_predicted), denoised_images_predicted)
     fake_loss = cross_entropy(torch.zeros_like(normal_images_predicted), normal_images_predicted)
     total_loss = real_loss + fake_loss
@@ -42,7 +42,7 @@ def calc_denoiser_ssim_loss(predicted: torch.Tensor, true: torch.Tensor) -> torc
     return 1 - structural_similarity_index_measure(predicted, true)
 
 
-def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[list, list]]:
+def train(datasets: list[Dataset], checkpoint_dir: str) -> tuple[torch.Module, tuple[list, list]]:
     is_gpu = 1
     base_model = load_checkpoint(checkpoint_dir, is_gpu)
     discriminator_model = make_discriminator_model()
@@ -70,7 +70,7 @@ def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[li
     discriminator_loss_records, denoiser_loss_records = [], []
     print_loss_interval = config["print_loss_interval"]
 
-    for epoch in range(num_epochs):
+    for epoch_idx, dataset in enumerate(datasets):
         dataloader: DataLoader = DataLoader(dataset, batch_size=config["batch_size"], shuffle=True)
 
         for idx, (sand_dust_images, clear_images, _) in enumerate(dataloader):
