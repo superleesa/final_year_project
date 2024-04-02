@@ -1,15 +1,14 @@
 from typing import List, Literal
-
 from src.toenet.test import load_checkpoint
 import numpy as np
 import utils.metrics as metrics
 from torch.utils.data import DataLoader
-from utils.preprocess import SIEDataset
 import torch
 import random
 import os
-from PIL import Image
 import cv2
+from utils.postprocess import validate_transform
+
 
 
 SaveImageType = Literal["all", "sample", "no"]
@@ -48,15 +47,14 @@ def validate(dataloader: DataLoader, save_dir: "str", save_images: SaveImageType
             ssim__output_batches.append(ssim_per_sample)
 
             if save_images == "all":
-                denoised_images = denoised_images.cpu().numpy()
-                denoised_images = np.transpose(denoised_images, axes=[0, 2, 3, 1]).astype('float32')
-                denoised_images = np.clip(denoised_images*255, 0.0, 255.0)  # normalize back to 0~255
+                denoised_images = validate_transform(denoised_images)
                 for denoised_image, image_name in zip(denoised_images, image_names):
                     save_image(denoised_image, image_name, save_dir)
             
             elif save_images == "sample":
                 image_idx = random.randint(0, len(denoised_images)-1)
                 denoised_image, image_name = denoised_images[image_idx], image_names[image_idx]
+                denoised_image = validate_transform(denoised_image)
                 save_image(denoised_image, image_name, save_dir)
 
 
