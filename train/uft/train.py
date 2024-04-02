@@ -82,7 +82,7 @@ def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[li
 
             denoised_images_predicted_labels = discriminator_model(denoised_images.detach())
             normal_images_predicted_labels = discriminator_model(clear_images)
-            denoiser_loss = denoiser_loss_b1*calc_denoiser_adversarial_loss(denoiser_criterion, denoised_images_predicted_labels, clip_min, clip_max) + denoiser_loss_b2*calc_denoiser_ssim_loss(denoised_images, clear_images)
+            denoiser_loss = denoiser_loss_b1*calc_denoiser_adversarial_loss(denoiser_criterion, denoised_images_predicted_labels, clip_min, clip_max) + denoiser_loss_b2*calc_denoiser_ssim_loss(denoised_images, sand_dust_images)
             discriminator_loss = calc_discriminator_loss(discriminator_criterion, denoised_images_predicted_labels, normal_images_predicted_labels)
 
             denoiser_loss.backward()
