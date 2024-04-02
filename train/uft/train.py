@@ -7,7 +7,7 @@ import pickle as pkl
 from pathlib import Path
 from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
-
+from torchmetrics.functional.image import structural_similarity_index_measure
 
 def make_discriminator_model():
     return nn.Sequential(
@@ -29,13 +29,17 @@ def calc_discriminator_loss(cross_entropy: nn.BCELoss, denoised_images_predicted
     return total_loss
 
 
-def calc_denoiser_loss(denoiser_criterion: nn.BCELoss, denoised_images_predicted: torch.Tensor,
-                       clip_min: float | None = None, clip_max: float | None = None) -> torch.Tensor:
+def calc_denoiser_adversarial_loss(denoiser_criterion: nn.BCELoss, denoised_images_predicted_labels: torch.Tensor,
+                                   clip_min: float | None = None, clip_max: float | None = None) -> torch.Tensor:
     # ensure that the denoised images are classified as normal
-    naive_loss = denoiser_criterion(torch.ones_like(denoised_images_predicted), denoised_images_predicted)
+    naive_loss = denoiser_criterion(torch.ones_like(denoised_images_predicted_labels), denoised_images_predicted_labels)
     if clip_min is not None and clip_max is not None:
         return torch.clip(naive_loss, clip_min, clip_max)
     return naive_loss
+
+
+def calc_denoiser_ssim_loss(predicted: torch.Tensor, true: torch.Tensor) -> torch.Tensor:
+    return 1 - structural_similarity_index_measure(predicted, true)
 
 
 def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[list, list]]:
@@ -55,6 +59,8 @@ def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[li
     denoiser_criterion = torch.nn.BCELoss()
     clip_min = config.get("clip_min")
     clip_max = config.get("clip_max")
+    denoiser_loss_b1 = config["denoiser_loss_b1"]
+    denoiser_loss_b2 = config["denoiser_loss_b2"]
 
     # discriminator settings
     discriminator_optimizer = optim.Adam(discriminator_model.parameters(), lr=config["discriminator_adam_lr"])
@@ -76,7 +82,7 @@ def train(dataset: Dataset, checkpoint_dir: str) -> tuple[torch.Module, tuple[li
 
             denoised_images_predicted_labels = discriminator_model(denoised_images.detach())
             normal_images_predicted_labels = discriminator_model(clear_images)
-            denoiser_loss = calc_denoiser_loss(denoiser_criterion, denoised_images_predicted_labels, clip_min, clip_max)
+            denoiser_loss = denoiser_loss_b1*calc_denoiser_adversarial_loss(denoiser_criterion, denoised_images_predicted_labels, clip_min, clip_max) + denoiser_loss_b2*calc_denoiser_ssim_loss(denoised_images, clear_images)
             discriminator_loss = calc_discriminator_loss(discriminator_criterion, denoised_images_predicted_labels, normal_images_predicted_labels)
 
             denoiser_loss.backward()
