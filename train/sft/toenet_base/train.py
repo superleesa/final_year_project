@@ -9,6 +9,7 @@ from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
 import os
 from pathlib import Path
+from tqdm import tqdm
 
 
 def get_color_loss(denoised_images: torch.Tensor, ground_truth_images: torch.Tensor, cos_sim_func: CosineSimilarity):
@@ -35,9 +36,9 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str):
     num_epochs = config["num_epochs"]
     loss_records = []
 
-    for epoch_idx in range(num_epochs):
+    for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
         dataloader: DataLoader = DataLoader(datasets[epoch_idx], batch_size=config["batch_size"], shuffle=True)
-        for idx, (sand_storm_images, ground_truth_images) in enumerate(dataloader):
+        for idx, (sand_storm_images, ground_truth_images) in tqdm(enumerate(dataloader), desc="step"):
             sand_storm_images = sand_storm_images.cuda()
             ground_truth_images = ground_truth_images.cuda()
 
@@ -46,12 +47,12 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str):
             color_loss = get_color_loss(denoised_images, ground_truth_images, color_loss_criterion)
             l2 = l2_criterion(denoised_images, ground_truth_images)
             total_loss = loss_gamma1*l2 + loss_gamma2*color_loss
-            loss_records.append(total_loss)
+            loss_records.append(total_loss.cpu().item())
             total_loss.backward()
             optimizer.step()
             
             if idx % 50 == 0:
-                print(total_loss)
+                print(total_loss.item())
 
     # save
     torch.save(base_model.state_dict(), f"{save_dir}/sft_toenet_on_sie.pth")
