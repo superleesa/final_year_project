@@ -19,13 +19,12 @@ def save_image(image: np.ndarray, image_name: str, save_dir: str) -> None:
     cv2.imwrite(save_path, image)
 
 
-def validate(dataloader: DataLoader, save_dir: "str", save_images: SaveImageType = "sample") -> tuple[np.ndarray, np.ndarray]:
+def validate(dataloader: DataLoader, save_dir: "str", checkpoint_dir: str, save_images: SaveImageType = "sample") -> tuple[np.ndarray, np.ndarray]:
     """
     Ensure all images have the same size
     """
     assert save_images in ["all", "sample", "no"], "save_images parameter must be one of all, sample, or no"
 
-    checkpoint_dir = './src/toenet/checkpoint/'
     # note: model is already in gpu
     model, _, _ = load_checkpoint(checkpoint_dir, 1)  # 1 for GPU
     model.eval()
