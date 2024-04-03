@@ -29,7 +29,7 @@ def paired_train_script(images_dir: str, checkpoint_dir: str, save_dir: str) -> 
     plt.close()
 
 
-if __name__ = "__main__":
+if __name__ == "__main__":
     Fire(paired_train_script)
     
     
