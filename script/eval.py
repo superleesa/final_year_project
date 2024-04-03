@@ -7,13 +7,12 @@ from datetime import datetime
 from metrics import mse_per_sample, psnr_per_sample, ssim_per_sample
 from validate import validate
 from utils.preprocess import create_paired_datasets
+from utils import create_unique_save_dir
 
 
 def evaluation_script(images_dir, checkpoint_dir: str, save_dir: str, save_images_type: str) -> None:
     # create unique save directory
-    formatted_current_datetime = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    save_dir = os.path.join(save_dir, f'run_{formatted_current_datetime}')
-    os.makedirs(save_dir, exist_ok=True)
+    save_dir = create_unique_save_dir(save_dir)
 
     datasets = create_paired_datasets(images_dir)
     dataset = datasets[0]
