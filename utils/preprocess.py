@@ -81,7 +81,6 @@ class UnpairedTrainDataset:
 def load_images_in_a_directory(directory_path: str) -> tuple[List[np.ndarray], List[str]]:
     images = []
     image_names = []
-    print(os.listdir(directory_path))
     for filename in os.listdir(directory_path):
         if filename.endswith("png") or filename.endswith("jpg"):
             image_path = os.path.join(directory_path, filename)
