@@ -7,6 +7,7 @@ import pickle as pkl
 from pathlib import Path
 from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
+from tqdm import tqdm
 
 
 def make_discriminator_model():
@@ -29,7 +30,7 @@ def discriminator_loss(cross_entropy: nn.BCELoss, denoised_images: torch.Tensor,
     return total_loss
 
 
-def train(dataset: Dataset, checkpoint_dir: str):
+def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str):
     is_gpu = 1
     base_model = load_checkpoint(checkpoint_dir, is_gpu)
     discriminator_model = make_discriminator_model()
@@ -48,10 +49,10 @@ def train(dataset: Dataset, checkpoint_dir: str):
     loss_records = []
     print_loss_interval = config["print_loss_interval"]
 
-    for epoch in range(num_epochs):
-        dataloader: DataLoader = DataLoader(dataset, batch_size=config["batch_size"], shuffle=True)
+    for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
+        dataloader: DataLoader = DataLoader(datasets[epoch_idx], batch_size=config["batch_size"], shuffle=True)
 
-        for idx, (sand_storm_images, normal_images, _) in enumerate(dataloader):
+        for idx, (sand_storm_images, normal_images) in tqdm(enumerate(dataloader), desc="step"):
             sand_storm_images = sand_storm_images.cuda()
             normal_images = normal_images.cuda()
             optimizer.zero_grad()
@@ -68,7 +69,7 @@ def train(dataset: Dataset, checkpoint_dir: str):
                 print(loss)
 
     # save
-    torch.save(base_model.state_dict(), f"{checkpoint_dir}/base_model.pth")
-    with open(f"{checkpoint_dir}/loss_records.pickle", "wb") as f:
+    torch.save(base_model.state_dict(), f"{save_dir}/base_model.pth")
+    with open(f"{save_dir}/loss_records.pickle", "wb") as f:
         pkl.dump(loss_records, f)
     return base_model, loss_records
