@@ -52,16 +52,6 @@ class CoupledCompose:
     def __call__(self, noisy_image, ground_truth_image) -> tuple[torch.Tensor, torch.Tensor]:
         for transformer in self.transformers:
             noisy_image, ground_truth_image = transformer(noisy_image, ground_truth_image)
-
-            # image_noisy_image = noisy_image.numpy()
-            # image_noisy_image = np.transpose(image_noisy_image, (1, 2, 0))
-            # plt.imshow(image_noisy_image)
-            # plt.show()
-            # image_ground_truth_image = ground_truth_image.numpy()
-            # image_ground_truth_image = np.transpose(image_ground_truth_image, (1, 2, 0))
-            # plt.imshow(image_ground_truth_image)
-            # plt.show()
-
         return noisy_image, ground_truth_image
 
 

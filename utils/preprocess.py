@@ -37,7 +37,7 @@ class PairedDataset(Dataset):
         elif isinstance(self.transformer, v2.Compose):
             # copy to ensure arrays are different across Datasets
             sand_dust_image = self.transformer(self.sand_dust_images[idx].copy())
-            ground_truth_image = self.transformer(self.sand_dust_images[idx].copy())
+            ground_truth_image = self.transformer(self.ground_truth_images[idx].copy())
         return sand_dust_image, ground_truth_image, self.output_image_names[idx]
 
 class UnpairedDataset:
@@ -59,7 +59,7 @@ class UnpairedDataset:
     def __len__(self) -> int:
         return len(self.sand_dust_images)
 
-    def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor, str]:
         sand_dust_image = self.transformer(self.sand_dust_images[idx].copy())
         clear_image = self.transformer(self.sand_dust_images[idx].copy())
         return sand_dust_image, clear_image, self.output_image_names[idx]
