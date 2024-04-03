@@ -16,3 +16,4 @@ tqdm==4.66.2
 opencv-python
 -e git+https://github.com/superleesa/TOENet.git@d9d4f3bb78f6d65ca816914959eb63130b688cf4#egg=toenet
 pyyaml~=6.0.1
+fire==0.6.0
