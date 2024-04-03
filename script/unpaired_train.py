@@ -1,14 +1,17 @@
-from utils.preprocess import create_unpaired_dataset
-from train.uft import train as train_uft
 from fire import Fire
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from train.uft import train
+from utils.preprocess import create_unpaired_dataset
 
 # For unpaired images training in adversarial learning
-def unpaired_train_script(input_image_dir, save_dir, checkpoint_dir=None):
-    # Create unpaired dataset from input images directory
-    dataset = create_unpaired_dataset(input_image_dir)
+def unpaired_train_script(images_dir: str, checkpoint_dir: str, save_dir: str) -> None:
+    save_dir = create_unique_save_dir(save_dir)
+    datasets = create_unpaired_datasets(images_dir, is_train=True)
     
     # Train using adversarial learning approach
-    trained_uft_model, uft_loss_records = train_uft(dataset, checkpoint_dir, save_dir)  # Checkpoints will be saved inside `save_dir` if not specified
+    _, uft_loss_records = train(datasets, checkpoint_dir, save_dir)
     
     # Save loss_records in csv
     unpaired_loss_df = pd.DataFrame(uft_loss_records, columns=["loss"])
@@ -22,5 +25,6 @@ def unpaired_train_script(input_image_dir, save_dir, checkpoint_dir=None):
     plt.savefig(f"{save_dir}/unpaired_loss_curve.png")
     plt.close()
 
-if __name__ = "__main__":
+
+if __name__ == "__main__":
     Fire(unpaired_train_script)
