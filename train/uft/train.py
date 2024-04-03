@@ -7,6 +7,7 @@ import pickle as pkl
 from pathlib import Path
 from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
+from tqdm import tqdm
 
 
 def make_discriminator_model():
@@ -48,10 +49,10 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str):
     loss_records = []
     print_loss_interval = config["print_loss_interval"]
 
-    for epoch_idx in range(num_epochs):
+    for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
         dataloader: DataLoader = DataLoader(datasets[epoch_idx], batch_size=config["batch_size"], shuffle=True)
 
-        for idx, (sand_storm_images, normal_images) in enumerate(dataloader):
+        for idx, (sand_storm_images, normal_images) in tqdm(enumerate(dataloader), desc="step"):
             sand_storm_images = sand_storm_images.cuda()
             normal_images = normal_images.cuda()
             optimizer.zero_grad()
