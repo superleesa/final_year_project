@@ -16,14 +16,17 @@ class ToTensorTransform():
 
 class RandomResizedCropTransform():
     def __call__(self, noisy_image: torch.Tensor, ground_truth_image: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        ground_truth_image = v2.functional.resize(ground_truth_image, size=(H_THRESHOLD, W_THRESHOLD))
-        noisy_image = v2.functional.resize(noisy_image, size=(H_THRESHOLD, W_THRESHOLD))
+        CROP_RATIO = 3/4
 
-        # Random crop
+        # random crop to CROP_RATIO of original input image size
         i, j, h, w = v2.RandomCrop.get_params(
-            ground_truth_image, output_size=(H_THRESHOLD, W_THRESHOLD))
+            ground_truth_image, output_size=(int(H_THRESHOLD*CROP_RATIO), int(W_THRESHOLD*CROP_RATIO)))
         ground_truth_image = v2.functional.crop(ground_truth_image, i, j, h, w)
         noisy_image = v2.functional.crop(noisy_image, i, j, h, w)
+        
+        # resize the cropped image into H_THRESHOLD * W_THRESHOLD
+        ground_truth_image = v2.functional.resize(ground_truth_image, size=(H_THRESHOLD, W_THRESHOLD))
+        noisy_image = v2.functional.resize(noisy_image, size=(H_THRESHOLD, W_THRESHOLD))
         return noisy_image, ground_truth_image
 
 class RandomHorizontalFlipTransform():

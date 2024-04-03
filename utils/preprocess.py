@@ -83,7 +83,7 @@ def load_images_in_a_directory(directory_path: str) -> tuple[List[np.ndarray], L
 def sort_image_by_filenames(images: List[np.ndarray], image_names: List[str]) -> List[np.ndarray]:
     return [image for image, _ in sorted(zip(images, image_names), key=lambda x: x[1])]
 
-def create_paired_dataset(dataset_dir: str, is_train=False, num_datasets: int = 1) -> List[PairedDataset]:
+def create_paired_datasets(dataset_dir: str, is_train=False, num_datasets: int = 1) -> List[PairedDataset]:
     """
     dataset_dir: directory of the dataset (e.g. "Data/Synthetic_images/")
     """
