@@ -8,6 +8,7 @@ from pathlib import Path
 from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
 from torchmetrics.functional.image import structural_similarity_index_measure
+from tqdm import tqdm
 
 
 def make_discriminator_model():
@@ -60,9 +61,7 @@ def calc_denoiser_ssim_loss(
     return 1 - structural_similarity_index_measure(predicted, true, data_range=1.0)
 
 
-def train(
-    datasets: list[Dataset], checkpoint_dir: str
-) -> tuple[torch.Module, tuple[list, list]]:
+def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]]]:
     is_gpu = 1
     base_model = load_checkpoint(checkpoint_dir, is_gpu)
     discriminator_model = make_discriminator_model()
@@ -94,12 +93,10 @@ def train(
     discriminator_loss_records, denoiser_loss_records = [], []
     print_loss_interval = config["print_loss_interval"]
 
-    for epoch_idx, dataset in enumerate(datasets):
-        dataloader: DataLoader = DataLoader(
-            dataset, batch_size=config["batch_size"], shuffle=True
-        )
+    for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
+        dataloader: DataLoader = DataLoader(datasets[epoch_idx], batch_size=config["batch_size"], shuffle=True)
 
-        for idx, (sand_dust_images, clear_images, _) in enumerate(dataloader):
+        for idx, (sand_dust_images, clear_images) in tqdm(enumerate(dataloader), desc="step"):
             sand_dust_images = sand_dust_images.cuda()
             clear_images = clear_images.cuda()
 
@@ -127,21 +124,21 @@ def train(
             discriminator_loss.backward()
             discriminator_optimizer.step()
 
-            denoiser_loss_records.append(denoiser_loss)
-            discriminator_loss_records.append(discriminator_loss)
+            denoiser_loss_records.append(denoiser_loss.cpu().item())
+            discriminator_loss_records.append(discriminator_loss.cpu().item())
 
             if idx % print_loss_interval == 0:
                 print(denoiser_loss)
                 print(discriminator_loss)
 
     # save
-    torch.save(base_model.state_dict(), f"{checkpoint_dir}/base_model.pth")
+    torch.save(base_model.state_dict(), f"{save_dir}/base_model.pth")
     with (
         open(
-            f"{checkpoint_dir}/denoiser_loss_records.pickle", "wb"
+            f"{save_dir}/denoiser_loss_records.pickle", "wb"
         ) as denoiser_record_file,
         open(
-            f"{checkpoint_dir}/discriminator_loss_records.pickle", "wb"
+            f"{save_dir}/discriminator_loss_records.pickle", "wb"
         ) as discriminator_record_file,
     ):
         pkl.dump(denoiser_loss_records, denoiser_record_file)

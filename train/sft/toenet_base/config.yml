@@ -1,7 +1,10 @@
 loss_gamma1: 0.8
 loss_gamma2: 0.2
-num_epochs: 30
+num_epochs: 20
 adam_lr: 0.001
 #step_lr_step_size: 30
 #step_lr_gamma: 0.1
 batch_size: 4
+checkpoint_dir: "/home/student/Documents/MDS12/sho/final_year_project/src/toenet/checkpoint/"
+images_dir: "/home/student/Documents/MDS12/sho/final_year_project/Data/Synthetic_images"
+save_dir: "/home/student/Documents/MDS12/sho/final_year_project/Data/output/base_toenet_on_sie"
