@@ -6,39 +6,19 @@ import os
 from torchvision.transforms import v2
 import random
 import cv2
-
+import random
+from utils.transforms import train_paired_transform, train_unpaired_transform, eval_transform, CoupledCompose
 
 # dataset directory constants
 NOISY_IMAGE_DIR_NAME = "noisy"
 GROUND_TRUTH_IMAGE_DIR_NAME = "ground_truth"
 CLEAR_IMAGE_DIR_NAME = "clear"
 
-
-# image size constants
-W_THRESHOLD = 440
-H_THRESHOLD = 330
-
-train_transform = v2.Compose([
-    v2.Lambda(lambda image: np.transpose(image, axes=[2, 0, 1]).astype('float32')),
-    v2.ToTensor(),
-    v2.RandomResizedCrop((W_THRESHOLD, H_THRESHOLD)),
-    v2.RandomHorizontalFlip(),
-    v2.RandomVerticalFlip(),
-    v2.RandomRotation(degrees=90),
-])
-
-eval_transform = v2.Compose([
-    v2.Lambda(lambda image: np.transpose(image, axes=[2, 0, 1]).astype('float32')),
-    v2.ToTensor(),
-    v2.Resize((W_THRESHOLD, H_THRESHOLD)),
-])
-
-
 class PairedDataset(Dataset):
     def __init__(self, sand_dust_images: List[np.ndarray],
                  ground_truth_images: List[np.ndarray],
                  output_image_names: List[str],
-                 transformer: v2.Transform.Compose) -> None:
+                 transformer: CoupledCompose | v2.Compose) -> None:
         """
         output_image_names: should only be the name of the image without the extension and the path
         """
@@ -52,17 +32,20 @@ class PairedDataset(Dataset):
         return len(self.sand_dust_images)
 
     def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        sand_dust_image = self.transformer(self.sand_dust_images[idx])
-        ground_truth_image = self.transformer(self.ground_truth_images[idx])
+        if isinstance(self.transformer, CoupledCompose):
+            sand_dust_image, ground_truth_image = self.transformer(self.sand_dust_images[idx].copy(), self.ground_truth_images[idx].copy())
+        elif isinstance(self.transformer, v2.Compose):
+            # copy to ensure arrays are different across Datasets
+            sand_dust_image = self.transformer(self.sand_dust_images[idx].copy())
+            ground_truth_image = self.transformer(self.sand_dust_images[idx].copy())
         return sand_dust_image, ground_truth_image, self.output_image_names[idx]
-
 
 class UnpairedDataset:
     """This class must be instantiated for each epoch to change pairs."""
     def __init__(self, sand_dust_images: List[np.ndarray],
                  clear_images: List[np.array],
                  output_image_names: List[str],
-                 transformer: v2.Transform.Compose) -> None:
+                 transformer: v2.Compose) -> None:
         self.sand_dust_images = sand_dust_images
         self.clear_images = clear_images
         self.output_image_names = output_image_names
@@ -114,6 +97,7 @@ def create_paired_dataset(dataset_dir: str, is_train=False, num_datasets: int = 
 
     denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
 
+    transformer = train_paired_transform if is_train else eval_transform
     return [PairedDataset(noisy_images, gt_images, denoised_image_file_names, transformer) for _ in range(num_datasets)]
 
 def create_unpaired_datasets(dataset_dir: str, num_datasets: int = 1, is_train=False) -> List[UnpairedDataset]:
@@ -130,5 +114,5 @@ def create_unpaired_datasets(dataset_dir: str, num_datasets: int = 1, is_train=F
 
     denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
 
-    transformer = train_transform if is_train else eval_transform
+    transformer = train_unpaired_transform if is_train else eval_transform
     return [UnpairedDataset(noisy_images, clear_images, denoised_image_file_names, transformer) for _ in range(num_datasets)]
