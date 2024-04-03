@@ -43,15 +43,12 @@ class PairedDataset(Dataset):
 class UnpairedDataset:
     """This class must be instantiated for each epoch to change pairs."""
     def __init__(self, sand_dust_images: List[np.ndarray],
-                 clear_images: List[np.array],
-                 output_image_names: List[str],
+                 clear_images: List[np.ndarray],
                  transformer: v2.Compose) -> None:
         self.sand_dust_images = sand_dust_images
         self.clear_images = clear_images
-        self.output_image_names = output_image_names
 
         self.transformer = transformer
-
         # generate random pairs
         random.shuffle(self.sand_dust_images)
         random.shuffle(self.clear_images)
@@ -59,10 +56,10 @@ class UnpairedDataset:
     def __len__(self) -> int:
         return len(self.sand_dust_images)
 
-    def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor, str]:
+    def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor]:
         sand_dust_image = self.transformer(self.sand_dust_images[idx].copy())
-        clear_image = self.transformer(self.sand_dust_images[idx].copy())
-        return sand_dust_image, clear_image, self.output_image_names[idx]
+        clear_image = self.transformer(self.clear_images[idx].copy())
+        return sand_dust_image, clear_image
 
 
 def load_images_in_a_directory(directory_path: str) -> tuple[List[np.ndarray], List[str]]:
@@ -100,11 +97,12 @@ def create_paired_datasets(dataset_dir: str, is_train=False, num_datasets: int =
     transformer = train_paired_transform if is_train else eval_transform
     return [PairedDataset(noisy_images, gt_images, denoised_image_file_names, transformer) for _ in range(num_datasets)]
 
-def create_unpaired_datasets(dataset_dir: str, num_datasets: int = 1, is_train=False) -> List[UnpairedDataset]:
+def create_unpaired_datasets(dataset_dir: str, num_datasets: int = 1) -> List[UnpairedDataset]:
     """
     dataset_dir: directory of the dataset (e.g. "Data/Synthetic_images/")
+    Do not use thsi funciton when evaluating
     """
-    noisy_path = os.path.join(dataset_dir, CLEAR_IMAGE_DIR_NAME)
+    noisy_path = os.path.join(dataset_dir, NOISY_IMAGE_DIR_NAME)
     noisy_images, noisy_image_names = load_images_in_a_directory(noisy_path)
     noisy_images = sort_image_by_filenames(noisy_images, noisy_image_names)
 
@@ -112,7 +110,4 @@ def create_unpaired_datasets(dataset_dir: str, num_datasets: int = 1, is_train=F
     clear_images, clear_image_names = load_images_in_a_directory(clear_path)
     clear_images = sort_image_by_filenames(clear_images, clear_image_names)
 
-    denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
-
-    transformer = train_unpaired_transform if is_train else eval_transform
-    return [UnpairedDataset(noisy_images, clear_images, denoised_image_file_names, transformer) for _ in range(num_datasets)]
+    return [UnpairedDataset(noisy_images, clear_images, train_unpaired_transform) for _ in range(num_datasets)]
