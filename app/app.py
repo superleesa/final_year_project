@@ -26,7 +26,7 @@ def restore_image():
         # TODO: add caching
         model = load_model(app.config["checkpoint_dir"])
         restored_filename = restore_and_save_one(model, filename)
-        return send_file(restored_filename, mimetype='image/gif')
+        return send_file(restored_filename, mimetype='image/gif')   
 
 if __name__ == '__main__':
    app.run(debug=True); 
