@@ -100,7 +100,7 @@ def load_images_in_a_directory(directory_path: str) -> tuple[List[np.ndarray], L
 def sort_image_by_filenames(images: List[np.ndarray], image_names: List[str]) -> List[np.ndarray]:
     return [image for image, _ in sorted(zip(images, image_names), key=lambda x: x[1])]
 
-def create_paired_dataset(dataset_dir: str, is_train=False) -> PairedDataset:
+def create_paired_dataset(dataset_dir: str, is_train=False, num_datasets: int = 1) -> List[PairedDataset]:
     """
     dataset_dir: directory of the dataset (e.g. "Data/Synthetic_images/")
     """
@@ -114,12 +114,9 @@ def create_paired_dataset(dataset_dir: str, is_train=False) -> PairedDataset:
 
     denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
 
-    transformer = train_transform if is_train else eval_transform
-    dataset = PairedDataset(noisy_images, gt_images, denoised_image_file_names, transformer)
-    return dataset
+    return [PairedDataset(noisy_images, gt_images, denoised_image_file_names, transformer) for _ in range(num_datasets)]
 
-
-def create_unpaired_dataset(dataset_dir: str, num_datasets: int = 1, is_train=False) -> List[UnpairedDataset]:
+def create_unpaired_datasets(dataset_dir: str, num_datasets: int = 1, is_train=False) -> List[UnpairedDataset]:
     """
     dataset_dir: directory of the dataset (e.g. "Data/Synthetic_images/")
     """
