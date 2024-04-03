@@ -11,18 +11,29 @@ def unpaired_train_script(images_dir: str, checkpoint_dir: str, save_dir: str) -
     datasets = create_unpaired_datasets(images_dir, is_train=True)
     
     # Train using adversarial learning approach
-    _, uft_loss_records = train(datasets, checkpoint_dir, save_dir)
+    _, (denoiser_loss_records, discriminator_loss_records) = train(datasets, checkpoint_dir, save_dir)
     
     # Save loss_records in csv
-    unpaired_loss_df = pd.DataFrame(uft_loss_records, columns=["loss"])
+    unpaired_loss_df = pd.DataFrame({
+        "denoiser_loss": denoiser_loss_records,
+        "discriminator_loss": discriminator_loss_records,
+    })
     unpaired_loss_df.to_csv(f"{save_dir}/unpaired_loss_records.csv", index=False)
 
-    # Create matplotlib plot for loss curve
-    plt.plot(uft_loss_records)
-    plt.xlabel("Epochs")
+    # plot for denoiser loss
+    plt.plot(denoiser_loss_records)
+    plt.xlabel("Steps")
     plt.ylabel("Loss")
-    plt.title("Unpaired Image Training Loss Curve")
-    plt.savefig(f"{save_dir}/unpaired_loss_curve.png")
+    plt.title("Unpaired Image Training Denoiser Loss Curve")
+    plt.savefig(f"{save_dir}/unpaired_denoiser_loss_curve.png")
+    plt.close()
+
+    # plot for discriminator loss
+    plt.plot(discriminator_loss_records)
+    plt.xlabel("Steps")
+    plt.ylabel("Loss")
+    plt.title("Unpaired Image Training Discriminator Loss Curve")
+    plt.savefig(f"{save_dir}/unpaired_discriminator_loss_curve.png")
     plt.close()
 
 

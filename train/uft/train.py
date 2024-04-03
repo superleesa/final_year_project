@@ -133,14 +133,4 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
 
     # save
     torch.save(base_model.state_dict(), f"{save_dir}/base_model.pth")
-    with (
-        open(
-            f"{save_dir}/denoiser_loss_records.pickle", "wb"
-        ) as denoiser_record_file,
-        open(
-            f"{save_dir}/discriminator_loss_records.pickle", "wb"
-        ) as discriminator_record_file,
-    ):
-        pkl.dump(denoiser_loss_records, denoiser_record_file)
-        pkl.dump(discriminator_loss_records, discriminator_record_file)
     return base_model, (denoiser_loss_records, discriminator_loss_records)
