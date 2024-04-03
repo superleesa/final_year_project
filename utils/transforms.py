@@ -8,13 +8,13 @@ import numpy as np
 W_THRESHOLD = 440
 H_THRESHOLD = 330
 
-class ToTensorTransform():
+class CoupledToTensorTransform():
     def __call__(self, noisy_image: torch.Tensor, ground_truth_image: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         ground_truth_image = v2.functional.to_tensor(ground_truth_image)
         noisy_image = v2.functional.to_tensor(noisy_image)
         return noisy_image, ground_truth_image
 
-class RandomResizedCropTransform():
+class CoupledRandomResizeCropTransform():
     def __call__(self, noisy_image: torch.Tensor, ground_truth_image: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         CROP_RATIO = 3/4
 
@@ -29,7 +29,7 @@ class RandomResizedCropTransform():
         noisy_image = v2.functional.resize(noisy_image, size=(H_THRESHOLD, W_THRESHOLD))
         return noisy_image, ground_truth_image
 
-class RandomHorizontalFlipTransform():
+class CoupledRandomHorizontalFlipTransform():
     def __call__(self, noisy_image: torch.Tensor, ground_truth_image: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         if random.random() > 0.5:
             ground_truth_image = v2.functional.hflip(ground_truth_image)
@@ -37,7 +37,7 @@ class RandomHorizontalFlipTransform():
         return noisy_image, ground_truth_image
 
 
-class RandomVerticalFlipTransform:
+class CoupledRandomVerticalFlipTransform:
     def __call__(self, noisy_image: torch.Tensor, ground_truth_image: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         if random.random() > 0.5:
             ground_truth_image = v2.functional.vflip(ground_truth_image)
@@ -53,20 +53,36 @@ class CoupledCompose:
         for transformer in self.transformers:
             noisy_image, ground_truth_image = transformer(noisy_image, ground_truth_image)
         return noisy_image, ground_truth_image
+    
+
+class RandomResizeCropTransform():
+    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+        CROP_RATIO = 3/4
+
+        # random crop to CROP_RATIO of original input image size
+        i, j, h, w = v2.RandomCrop.get_params(
+            image, output_size=(int(H_THRESHOLD*CROP_RATIO), int(W_THRESHOLD*CROP_RATIO)))
+        image = v2.functional.crop(image, i, j, h, w)
+        
+        
+        # resize the cropped image into H_THRESHOLD * W_THRESHOLD
+        image = v2.functional.resize(image, size=(H_THRESHOLD, W_THRESHOLD))
+        
+        return image
 
 
 train_unpaired_transform = v2.Compose([
     v2.ToTensor(),
-    v2.RandomResizedCrop((H_THRESHOLD, W_THRESHOLD)),
+    RandomResizeCropTransform(),
     v2.RandomHorizontalFlip(),
     v2.RandomVerticalFlip(),
 ])
 
 train_paired_transform = CoupledCompose([
-    ToTensorTransform(),
-    RandomResizedCropTransform(),
-    RandomHorizontalFlipTransform(),
-    RandomVerticalFlipTransform(),
+    CoupledToTensorTransform(),
+    CoupledRandomResizeCropTransform(),
+    CoupledRandomHorizontalFlipTransform(),
+    CoupledRandomVerticalFlipTransform(),
 ])
 
 eval_transform = v2.Compose([
