@@ -1,4 +1,4 @@
-from flask import Flask, send_file
+from flask import Flask, send_file, render_template
 import os
 
 from model import load_model, restore_and_save_one
@@ -14,7 +14,7 @@ app.config["checkpoint_dir"] = "/checkpoint"
 
 @app.route("/")
 def index():
-    return "Hello, World!"
+    return render_template("index.html")
 
 @app.route("/restore-image", methods=["POST"])
 def restore_image():

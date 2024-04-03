@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Power-Denoise</title>
+</head>
+<body>
+    <h1>Power-Denoise</h1>
+    <p>Upload an image and click the "Denoise" button to remove noise from the image.</p>
+    <div id="form-wrapper">
+        <form action="/restore-image" method="post" enctype="multipart/form-data">
+            <input type="file" name="image" accept="image/*" required>
+            <button type="submit">Denoise</button>
+        </form>
+    </div>
+</body>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+    }
+    h1 {
+        text-align: center;
+    }
+    #form-wrapper{
+        display: flex;
+        justify-content: center;
+    }
+    p {
+        text-align: center;
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin: 20px 0;
+        width: 40%;
+    }
+    input {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    button {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #0056b3;
+    }
+    h2 {
+        text-align: center;
+    }
+    img {
+        display: block;
+        margin: 0 auto;
+    }
+</style>
+</html>
