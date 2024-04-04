@@ -64,10 +64,11 @@ def calc_denoiser_ssim_loss(
 
 def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]]]:
     is_gpu = 1
-    base_model = load_checkpoint(checkpoint_dir, is_gpu)
+    denoiser, _, _ = load_checkpoint(checkpoint_dir, is_gpu)  # base model already in gpu
     discriminator_model = make_discriminator_model()
-    base_model.train()
+    denoiser.train()
     discriminator_model.train()
+    discriminator_model.cuda()
 
     # load params from yml file
     config_path = Path(__file__).parent / "config.yml"
@@ -76,13 +77,13 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
 
     # denoiser settings
     denoiser_optimizer = optim.Adam(
-        base_model.parameters(), lr=config["denoiser_adam_lr"]
+        denoiser.parameters(), lr=config["denoiser_adam_lr"]
     )
     denoiser_criterion = torch.nn.BCELoss()
-    clip_min = config.get("clip_min")
-    clip_max = config.get("clip_max")
-    denoiser_loss_b1 = config["denoiser_loss_b1"]
-    denoiser_loss_b2 = config["denoiser_loss_b2"]
+    clip_min: int | float = config.get("clip_min")
+    clip_max: int | float = config.get("clip_max")
+    denoiser_loss_b1: float = config["denoiser_loss_b1"]
+    denoiser_loss_b2: float = config["denoiser_loss_b2"]
 
     # discriminator settings
     discriminator_optimizer = optim.Adam(
@@ -90,48 +91,58 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
     )
     discriminator_criterion = torch.nn.BCELoss()
 
-    num_epochs = config["num_epochs"]
+    num_epochs: int = config["num_epochs"]
     discriminator_loss_records, denoiser_loss_records = [], []
-    print_loss_interval = config["print_loss_interval"]
+    print_loss_interval: int = config["print_loss_interval"]
 
     for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
         dataloader: DataLoader = DataLoader(datasets[epoch_idx], batch_size=config["batch_size"], shuffle=True)
 
         for idx, (sand_dust_images, clear_images) in tqdm(enumerate(dataloader), desc="step"):
             sand_dust_images = sand_dust_images.cuda()
-            clear_images = clear_images.cuda()
-
-            discriminator_optimizer.zero_grad()
-            denoised_images = base_model(sand_dust_images)
-
+            
+            # update denoiser
+            denoiser_optimizer.zero_grad()
+            denoised_images = denoiser(sand_dust_images)
             denoised_images_predicted_labels = discriminator_model(
-                denoised_images.detach()
+                denoised_images
             )
-            normal_images_predicted_labels = discriminator_model(clear_images)
             denoiser_loss = denoiser_loss_b1 * calc_denoiser_adversarial_loss(
                 denoiser_criterion, denoised_images_predicted_labels, clip_min, clip_max
             ) + denoiser_loss_b2 * calc_denoiser_ssim_loss(
                 denoised_images, sand_dust_images
             )
-            discriminator_loss = calc_discriminator_loss(
-                discriminator_criterion,
-                denoised_images_predicted_labels,
-                normal_images_predicted_labels,
-            )
-
             denoiser_loss.backward()
             denoiser_optimizer.step()
+            denoiser_loss_records.append(denoiser_loss.cpu().item())
+            del denoiser_loss
+            torch.cuda.empty_cache()
 
+
+            # update discriminator
+            discriminator_optimizer.zero_grad()
+            clear_images = clear_images.cuda()
+            normal_images_predicted_labels = discriminator_model(clear_images)
+            
+            # we cannot use denoised_images_predicted_labels above because gradients are different
+            denoised_images_predicted_labels_for_discriminator = discriminator_model(
+                denoised_images.detach()
+            )
+            discriminator_loss = calc_discriminator_loss(
+                discriminator_criterion,
+                denoised_images_predicted_labels_for_discriminator,
+                normal_images_predicted_labels,
+            )
             discriminator_loss.backward()
             discriminator_optimizer.step()
-
-            denoiser_loss_records.append(denoiser_loss.cpu().item())
             discriminator_loss_records.append(discriminator_loss.cpu().item())
 
             if idx % print_loss_interval == 0:
-                print(denoiser_loss)
-                print(discriminator_loss)
+                print(denoiser_loss_records[-1])
+                print(discriminator_loss_records[-1])
+            
+            torch.cuda.empty_cache()
 
     # save
-    torch.save(base_model.state_dict(), f"{save_dir}/base_model.pth")
-    return base_model, (denoiser_loss_records, discriminator_loss_records)
+    torch.save(denoiser.state_dict(), f"{save_dir}/base_model.pth")
+    return denoiser, (denoiser_loss_records, discriminator_loss_records)
