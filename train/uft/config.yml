@@ -8,3 +8,6 @@ batch_size: 4
 print_loss_interval: 100
 denoiser_loss_b1: 0.5
 denoiser_loss_b2: 0.5
+checkpoint_dir: "/home/student/Documents/MDS12/sho/final_year_project/src/toenet/checkpoint/"
+images_dir: "/home/student/Documents/MDS12/sho/final_year_project/Data/"
+save_dir: "/home/student/Documents/MDS12/sho/final_year_project/Data/output/"

@@ -3,12 +3,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from train.uft import train
-from utils.preprocess import create_unpaired_dataset
+from utils.preprocess import create_unpaired_datasets
+from utils.utils import create_unique_save_dir
+from pathlib import Path
+import yaml
 
 # For unpaired images training in adversarial learning
-def unpaired_train_script(images_dir: str, checkpoint_dir: str, save_dir: str) -> None:
+def unpaired_train_script(images_dir: str = None, checkpoint_dir: str = None, save_dir: str = None) -> None:
+
+    # load params from yml file
+    config_path = Path(__file__).parent / "config.yml"
+    with open(config_path) as ymlfile:
+        config = yaml.safe_load(ymlfile)
+    images_dir = images_dir or config["images_dir"]
+    checkpoint_dir = checkpoint_dir or config["checkpoint_dir"]
+    save_dir = save_dir or config["save_dir"]
+    num_epochs = config["epochs"]
+
     save_dir = create_unique_save_dir(save_dir)
-    datasets = create_unpaired_datasets(images_dir, is_train=True)
+    datasets = create_unpaired_datasets(images_dir, num_epochs)
     
     # Train using adversarial learning approach
     _, (denoiser_loss_records, discriminator_loss_records) = train(datasets, checkpoint_dir, save_dir)
