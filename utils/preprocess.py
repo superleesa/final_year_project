@@ -71,7 +71,9 @@ class UnpairedTrainDataset:
         random.shuffle(self.clear_images)
 
     def __len__(self) -> int:
-        return len(self.sand_dust_images)
+        # length of sand-dust-images and clear images do not need to be the same
+        # -> ensure minimum of the two is selected to avoid index range over error
+        return min(len(self.sand_dust_images), len(self.clear_images))
 
     def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor]:
         sand_dust_image = self.transformer(self.sand_dust_images[idx].copy())
