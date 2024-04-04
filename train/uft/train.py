@@ -13,15 +13,16 @@ from tqdm import tqdm
 
 def make_discriminator_model():
     return nn.Sequential(
-        nn.Conv2d(3, 64, 5, 2, "same"),
+        nn.Conv2d(3, 64, 5, 2, 0),
         nn.LeakyReLU(),
         nn.Dropout(0.3),
-        nn.Conv2d(64, 128, 5, 2, "same"),
+        nn.Conv2d(64, 128, 5, 2, 0),
         nn.LeakyReLU(),
         nn.Dropout(0.3),
         nn.Flatten(),
-        nn.Linear(1, 1),
+        nn.Linear(1095680, 1),
     )
+
 
 
 def calc_discriminator_loss(
