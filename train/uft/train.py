@@ -5,10 +5,17 @@ import torch.nn as nn
 import yaml
 import pickle as pkl
 from pathlib import Path
-from src.toenet.TOENet import TOENet
-from src.toenet.test import load_checkpoint
 from torchmetrics.functional.image import structural_similarity_index_measure
 from tqdm import tqdm
+
+import sys
+sys.path.append(str(Path(__file__).parent.parent.parent))
+print(sys.path)
+
+
+from src.toenet.TOENet import TOENet
+from src.toenet.test import load_checkpoint
+
 
 
 def make_discriminator_model():
