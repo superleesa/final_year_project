@@ -57,11 +57,12 @@ class CoupledCompose:
 
 class RandomResizeCropTransform():
     def __call__(self, image: torch.Tensor) -> torch.Tensor:
-        CROP_RATIO = 3/4
+        CROP_RATIO = 3/4  # TODO: make this random
 
         # random crop to CROP_RATIO of original input image size
+        _, image_height, image_width = image.size()
         i, j, h, w = v2.RandomCrop.get_params(
-            image, output_size=(int(H_THRESHOLD*CROP_RATIO), int(W_THRESHOLD*CROP_RATIO)))
+            image, output_size=(int(image_height*CROP_RATIO), int(image_width*CROP_RATIO)))
         image = v2.functional.crop(image, i, j, h, w)
         
         
