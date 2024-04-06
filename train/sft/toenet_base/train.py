@@ -9,6 +9,7 @@ from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
 import os
 from pathlib import Path
+from tqdm import tqdm
 
 
 def get_color_loss(denoised_images: torch.Tensor, ground_truth_images: torch.Tensor, cos_sim_func: CosineSimilarity):
@@ -16,7 +17,7 @@ def get_color_loss(denoised_images: torch.Tensor, ground_truth_images: torch.Ten
     one = torch.tensor(1).cuda()
     return one - cos_sim_func(denoised_images, ground_truth_images).mean()
 
-def train(dataset: Dataset, checkpoint_dir: str):
+def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str):
     is_gpu = 1
 
     base_model, _, _ = load_checkpoint(checkpoint_dir, is_gpu)
@@ -35,9 +36,9 @@ def train(dataset: Dataset, checkpoint_dir: str):
     num_epochs = config["num_epochs"]
     loss_records = []
 
-    for epoch in range(num_epochs):
-        dataloader: DataLoader = DataLoader(dataset, batch_size=config["batch_size"], shuffle=True)
-        for idx, (sand_storm_images, ground_truth_images, _) in enumerate(dataloader):
+    for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
+        dataloader: DataLoader = DataLoader(datasets[epoch_idx], batch_size=config["batch_size"], shuffle=True)
+        for idx, (sand_storm_images, ground_truth_images) in tqdm(enumerate(dataloader), desc="step"):
             sand_storm_images = sand_storm_images.cuda()
             ground_truth_images = ground_truth_images.cuda()
 
@@ -46,15 +47,15 @@ def train(dataset: Dataset, checkpoint_dir: str):
             color_loss = get_color_loss(denoised_images, ground_truth_images, color_loss_criterion)
             l2 = l2_criterion(denoised_images, ground_truth_images)
             total_loss = loss_gamma1*l2 + loss_gamma2*color_loss
-            loss_records.append(total_loss)
+            loss_records.append(total_loss.cpu().item())
             total_loss.backward()
             optimizer.step()
             
             if idx % 50 == 0:
-                print(total_loss)
+                print(total_loss.item())
 
     # save
-    torch.save(base_model.state_dict(), f"{checkpoint_dir}/sft_toenet_on_sie.pth")
-    with open(f"{checkpoint_dir}/loss_records.pickle", "wb") as f:
+    torch.save(base_model.state_dict(), f"{save_dir}/sft_toenet_on_sie.pth")
+    with open(f"{save_dir}/loss_records.pickle", "wb") as f:
         pkl.dump(loss_records, f)
     return base_model, loss_records
