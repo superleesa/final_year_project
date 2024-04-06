@@ -59,10 +59,10 @@ def calc_denoiser_ssim_loss(
 def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]]]:
     is_gpu = 1
     denoiser, _, _ = load_checkpoint(checkpoint_dir, is_gpu)  # base model already in gpu
-    discriminator_model = Discriminator()
+    discriminator = Discriminator()
     denoiser.train()
-    discriminator_model.train()
-    discriminator_model.cuda()
+    discriminator.train()
+    discriminator.cuda()
 
     # load params from yml file
     config_path = Path(__file__).parent / "config.yml"
@@ -81,7 +81,7 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
 
     # discriminator settings
     discriminator_optimizer = optim.Adam(
-        discriminator_model.parameters(), lr=config["discriminator_adam_lr"]
+        discriminator.parameters(), lr=config["discriminator_adam_lr"]
     )
     discriminator_criterion = torch.nn.BCELoss()
 
@@ -100,7 +100,7 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
             denoised_images = denoiser(sand_dust_images)
             
             discriminator_optimizer.zero_grad()
-            denoised_images_predicted_labels = discriminator_model(
+            denoised_images_predicted_labels = discriminator(
                 denoised_images
             ).flatten()
             
@@ -117,10 +117,10 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
             # update discriminator
             discriminator_optimizer.zero_grad()
             clear_images = clear_images.cuda()
-            normal_images_predicted_labels = discriminator_model(clear_images).flatten()
+            normal_images_predicted_labels = discriminator(clear_images).flatten()
             
             # we cannot use denoised_images_predicted_labels above because gradients are different
-            denoised_images_predicted_labels_for_discriminator = discriminator_model(
+            denoised_images_predicted_labels_for_discriminator = discriminator(
                 denoised_images.detach()
             ).flatten()
             discriminator_loss = calc_discriminator_loss(
@@ -140,5 +140,6 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
             torch.cuda.empty_cache()
 
     # save
-    torch.save(denoiser.state_dict(), f"{save_dir}/base_model.pth")
+    torch.save(denoiser.state_dict(), f"{save_dir}/denoiser.pth")
+    torch.save(discriminator.state_dict(), f"{save_dir}/discriminator.pth")
     return denoiser, (denoiser_loss_records, discriminator_loss_records)
