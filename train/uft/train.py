@@ -111,6 +111,8 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
             # update denoiser
             denoiser_optimizer.zero_grad()
             denoised_images = denoiser(sand_dust_images)
+            
+            discriminator_optimizer.zero_grad()
             denoised_images_predicted_labels = discriminator_model(
                 denoised_images
             ).flatten()
