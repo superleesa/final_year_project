@@ -113,8 +113,8 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
             denoised_images = denoiser(sand_dust_images)
             denoised_images_predicted_labels = discriminator_model(
                 denoised_images
-            )
-            denoiser_loss = denoiser_loss_b1 * calc_denoiser_adversarial_loss(
+            ).flatten()
+            
                 denoiser_criterion, denoised_images_predicted_labels, clip_min, clip_max
             ) + denoiser_loss_b2 * calc_denoiser_ssim_loss(
                 denoised_images, sand_dust_images
