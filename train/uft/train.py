@@ -129,12 +129,12 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
             # update discriminator
             discriminator_optimizer.zero_grad()
             clear_images = clear_images.cuda()
-            normal_images_predicted_labels = discriminator_model(clear_images)
+            normal_images_predicted_labels = discriminator_model(clear_images).flatten()
             
             # we cannot use denoised_images_predicted_labels above because gradients are different
             denoised_images_predicted_labels_for_discriminator = discriminator_model(
                 denoised_images.detach()
-            )
+            ).flatten()
             discriminator_loss = calc_discriminator_loss(
                 discriminator_criterion,
                 denoised_images_predicted_labels_for_discriminator,
