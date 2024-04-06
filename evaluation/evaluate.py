@@ -39,7 +39,6 @@ def evaluate(dataloader: DataLoader, save_dir: "str", checkpoint_dir: str, save_
         with torch.no_grad():
             sand_dust_images = sand_dust_images.cuda()
             denoised_images = model(sand_dust_images)
-            
 
             ground_truth_images = ground_truth_images.cuda()
             mse_per_sample = metrics.mse_per_sample(denoised_images, ground_truth_images)
