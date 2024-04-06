@@ -1,0 +1,4 @@
+checkpoint_dir: "/home/student/Documents/MDS12/satoshi/final_year_project/src/toenet/checkpoint/"
+images_dir: "/home/student/Documents/MDS12/satoshi/final_year_project/Data/input/unpaired/"
+save_dir: "/home/student/Documents/MDS12/satoshi/final_year_project/Data/output/"
+save_images_type: "all"
