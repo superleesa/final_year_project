@@ -24,19 +24,12 @@ def load_checkpoint(checkpoint_path: str,is_gpu: bool):
 		net = TOENet()
 		device_ids = [0]
 		model = nn.DataParallel(net, device_ids=device_ids).cuda()
-		
-		model.load_state_dict(model_info['state_dict'])
-		optimizer = torch.optim.Adam(model.parameters())
-		optimizer.load_state_dict(model_info['optimizer'])
-		cur_epoch = model_info['epoch']
+		model.load_state_dict(model_info, strict=False)
 	else:
 		model_info = torch.load(checkpoint_path, map_location=torch.device('cpu'))
 		net = TOENet()
 		device_ids = [0]
 		model = nn.DataParallel(net, device_ids=device_ids)
-		model.load_state_dict(model_info['state_dict'])
-		optimizer = torch.optim.Adam(model.parameters())
-		optimizer.load_state_dict(model_info['optimizer'])
-		cur_epoch = model_info['epoch']
+		model.load_state_dict(model_info, strict=False)
 
-	return model, optimizer,cur_epoch
+	return model

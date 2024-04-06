@@ -6,7 +6,7 @@ from datetime import datetime
 import yaml
 from pathlib import Path
 from evaluate import evaluate
-from utils.preprocess import create_paired_datasets
+from utils.preprocess import create_evaluation_dataset
 from utils.utils import create_unique_save_dir
 
 def evaluation_script(images_dir: str | None = None, checkpoint_dir: str | None = None, save_dir: str | None = None, save_images_type: str = "all") -> None:
@@ -23,7 +23,7 @@ def evaluation_script(images_dir: str | None = None, checkpoint_dir: str | None 
     # create unique save directory
     save_dir = create_unique_save_dir(save_dir)
 
-    datasets = create_paired_datasets(images_dir)
+    datasets = create_evaluation_dataset(images_dir)
     dataset = datasets[0]
     dataloader = DataLoader(dataset, batch_size=4)
     psnr_per_sample, ssim_per_sample = evaluate(dataloader, save_dir, checkpoint_dir, save_images=save_images_type)
