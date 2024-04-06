@@ -1,5 +1,8 @@
 from typing import List, Literal
-from src.toenet.test import load_checkpoint
+from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).parent.parent))
+from utils.utils import load_checkpoint
 import numpy as np
 import utils.metrics as metrics
 from torch.utils.data import DataLoader

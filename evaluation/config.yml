@@ -1,4 +1,4 @@
-checkpoint_dir: "/home/student/Documents/MDS12/satoshi/final_year_project/src/toenet/checkpoint/"
-images_dir: "/home/student/Documents/MDS12/satoshi/final_year_project/Data/input/unpaired/"
-save_dir: "/home/student/Documents/MDS12/satoshi/final_year_project/Data/output/"
-save_images_type: "all"
+checkpoint_dir: "/home/student/Documents/MDS12/sho/final_year_project/Data/output/base_toenet_on_sie/run_2024_04_03_23_13_29/sft_toenet_on_sie.pth"
+images_dir: "/home/student/Documents/MDS12/sho/final_year_project/Data/Synthetic_images"
+save_dir: "/home/student/Documents/MDS12/sho/final_year_project/Data/output/base_toenet_on_sie"
+save_images_type: "sample"

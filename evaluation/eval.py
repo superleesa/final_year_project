@@ -5,9 +5,9 @@ import os
 from datetime import datetime
 import yaml
 from pathlib import Path
-from evaluation.evaluate import evaluate
+from evaluate import evaluate
 from utils.preprocess import create_paired_datasets
-from utils import create_unique_save_dir
+from utils.utils import create_unique_save_dir
 
 def evaluation_script(images_dir: str | None = None, checkpoint_dir: str | None = None, save_dir: str | None = None, save_images_type: str = "all") -> None:
 
