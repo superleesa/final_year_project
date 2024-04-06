@@ -3,14 +3,23 @@ from torch.utils.data import DataLoader
 import pandas as pd
 import os
 from datetime import datetime
-
-from metrics import mse_per_sample, psnr_per_sample, ssim_per_sample
-from validate import validate
+import yaml
+from pathlib import Path
+from evaluate import validate
 from utils.preprocess import create_paired_datasets
 from utils import create_unique_save_dir
 
+def evaluation_script(images_dir: str = None, checkpoint_dir: str = None, save_dir: str = None, save_images_type: str = None) -> None:
 
-def evaluation_script(images_dir, checkpoint_dir: str, save_dir: str, save_images_type: str) -> None:
+    # load params from yml file
+    config_path = Path(__file__).parent / "config.yml"
+    with open(config_path) as ymlfile:
+        config = yaml.safe_load(ymlfile)
+    images_dir = images_dir or config["images_dir"]
+    checkpoint_dir = checkpoint_dir or config["checkpoint_dir"]
+    save_dir = save_dir or config["save_dir"]
+    save_images_type = save_images_type or config["save_images_type"]
+
     # create unique save directory
     save_dir = create_unique_save_dir(save_dir)
 
