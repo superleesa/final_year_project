@@ -37,13 +37,13 @@ def calc_discriminator_loss(
     denoised_images_predicted: torch.Tensor,
     normal_images_predicted: torch.Tensor,
 ) -> torch.Tensor:
-    real_loss = cross_entropy(
-        torch.ones_like(denoised_images_predicted), denoised_images_predicted
+    denoised_loss = cross_entropy(
+        denoised_images_predicted, torch.ones_like(denoised_images_predicted)
     )
-    fake_loss = cross_entropy(
-        torch.zeros_like(normal_images_predicted), normal_images_predicted
+    clear_loss = cross_entropy(
+        normal_images_predicted, torch.zeros_like(normal_images_predicted) 
     )
-    total_loss = real_loss + fake_loss
+    total_loss = denoised_loss + clear_loss
     return total_loss
 
 
@@ -55,8 +55,8 @@ def calc_denoiser_adversarial_loss(
 ) -> torch.Tensor:
     # ensure that the denoised images are classified as normal
     naive_loss = denoiser_criterion(
-        torch.ones_like(denoised_images_predicted_labels),
         denoised_images_predicted_labels,
+        torch.ones_like(denoised_images_predicted_labels)
     )
     if clip_min is not None and clip_max is not None:
         return torch.clip(naive_loss, clip_min, clip_max)
