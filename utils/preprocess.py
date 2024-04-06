@@ -14,7 +14,7 @@ NOISY_IMAGE_DIR_NAME = "noisy"
 GROUND_TRUTH_IMAGE_DIR_NAME = "ground_truth"
 CLEAR_IMAGE_DIR_NAME = "clear"
 
-class PairedTrainDataset(Dataset):
+class PairedDataset(Dataset):
     def __init__(self, sand_dust_images: List[np.ndarray],
                  ground_truth_images: List[np.ndarray],
                  transformer: CoupledCompose | v2.Compose) -> None:
@@ -97,7 +97,7 @@ def load_images_in_a_directory(directory_path: str) -> tuple[List[np.ndarray], L
 def sort_image_by_filenames(images: List[np.ndarray], image_names: List[str]) -> List[np.ndarray]:
     return [image for image, _ in sorted(zip(images, image_names), key=lambda x: x[1])]
 
-def create_paired_datasets(dataset_dir: str, num_datasets: int = 1) -> List[PairedTrainDataset]:
+def create_paired_datasets(dataset_dir: str, num_datasets: int = 1) -> List[PairedDataset]:
     """
     dataset_dir: directory of the dataset (e.g. "Data/Synthetic_images/")
     """
@@ -109,7 +109,7 @@ def create_paired_datasets(dataset_dir: str, num_datasets: int = 1) -> List[Pair
     gt_images, gt_image_names = load_images_in_a_directory(gt_path)
     gt_images = [gt_image for gt_image, _ in sorted(zip(gt_images, gt_image_names), key=lambda x: x[1])]
 
-    return [PairedTrainDataset(noisy_images, gt_images, train_paired_transform) for _ in range(num_datasets)]
+    return [PairedDataset(noisy_images, gt_images, train_paired_transform) for _ in range(num_datasets)]
 
 def create_unpaired_datasets(dataset_dir: str, num_datasets: int = 1) -> List[UnpairedTrainDataset]:
     """
@@ -142,3 +142,16 @@ def create_evaluation_dataset(dataset_dir: str) -> EvaluationDataset:
     denoised_image_file_names = [f"{index}_denoised" for index in range(len(noisy_images))]
 
     return EvaluationDataset(noisy_images, gt_images, denoised_image_file_names, eval_transform)
+
+
+def create_train_and_validation_datasets(dataset_dir: str, train_ratio: float, num_datasets: int = 1) -> tuple[list[PairedDataset], list[PairedDataset]]:
+    
+    noisy_path = os.path.join(dataset_dir, NOISY_IMAGE_DIR_NAME)
+    noisy_images, noisy_image_names = load_images_in_a_directory(noisy_path)
+    noisy_images = sort_image_by_filenames(noisy_images, noisy_image_names)
+
+    gt_path = os.path.join(dataset_dir, GROUND_TRUTH_IMAGE_DIR_NAME)
+    gt_images, gt_image_names = load_images_in_a_directory(gt_path)
+    gt_images = [gt_image for gt_image, _ in sorted(zip(gt_images, gt_image_names), key=lambda x: x[1])]
+
+    return [PairedDataset(noisy_images, gt_images, train_paired_transform) for _ in range(num_datasets)]
