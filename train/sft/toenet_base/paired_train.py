@@ -4,7 +4,8 @@ import pandas as pd
 from pathlib import Path
 
 import sys
-sys.path.append(Path(__file__).parent.parent.parent.parent)
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
+# sys.path.append('/home/student/Documents/MDS12/sho/final_year_project/utils')
 print(sys.path)
 
 from utils.preprocess import create_paired_datasets
@@ -49,9 +50,9 @@ def paired_train_script(images_dir: str | None = None, checkpoint_dir: str | Non
     df_val_loss.to_csv(f"{save_dir}/val_loss_records.csv", index=False)
 
     # Create matplotlib plot for loss curve
-    plt.plot(df_train_loss["step_idx"], df_train_loss["denoiser_loss"], label="train")
-    plt.plot(df_val_loss["step_idx"], df_val_loss["denoiser_loss"], label="validation")
-    plt.xlabel("Epochs")
+    plt.plot(df_train_loss["step_idx"], df_train_loss["loss"], label="train")
+    plt.plot(df_val_loss["step_idx"], df_val_loss["loss"], label="validation")
+    plt.xlabel("Step")
     plt.ylabel("Loss")
     plt.title("Paired Image Training Loss Curve")
     plt.legend()

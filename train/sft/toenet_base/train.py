@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader, Dataset
 import torch.nn as nn
 import yaml
 import pickle as pkl
-from torch.nn as nn
 from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
 import os
@@ -12,8 +11,8 @@ from pathlib import Path
 from tqdm import tqdm
 
 import sys
-sys.path.append(Path(__file__).parent.parent.parent.parent)
-from src.utils.preprocess import PairedDataset
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
+from utils.preprocess import PairedDataset
 
 
 def get_color_loss(denoised_images: torch.Tensor, ground_truth_images: torch.Tensor, cos_sim_func: nn.CosineSimilarity):
