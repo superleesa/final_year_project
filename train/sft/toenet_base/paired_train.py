@@ -33,7 +33,7 @@ def paired_train_script(images_dir: str | None = None, checkpoint_dir: str | Non
     val_datasets = create_paired_datasets(images_dir, num_datasets=num_epochs)
     
     # Train TOENet model using supervised fine-tuning
-    _, train_loss_records, val_loss_records = train_loop(train_datasets, val_datasets, checkpoint_dir, save_dir)  # Checkpoints will be saved inside `save_dir`
+    _, train_loss_records, val_loss_records, val_loss_computed_indices = train_loop(train_datasets, val_datasets, checkpoint_dir, save_dir)  # Checkpoints will be saved inside `save_dir`
 
     # Save train_loss_records in csv
     df_train_loss = pd.DataFrame(
@@ -44,7 +44,7 @@ def paired_train_script(images_dir: str | None = None, checkpoint_dir: str | Non
     # Save val_loss_records in csv
     calc_eval_loss_interval: int = config["calc_eval_loss_interval"]
     df_val_loss = pd.DataFrame({
-        "step_idx": calc_eval_loss_interval * pd.Series(range(0, len(val_loss_records))),
+        "step_idx": val_loss_computed_indices,
         "loss": val_loss_records
     })
     df_val_loss.to_csv(f"{save_dir}/val_loss_records.csv", index=False)

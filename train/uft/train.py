@@ -162,8 +162,10 @@ def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[Unpaire
     num_epochs: int = config["num_epochs"]
     denoiser_loss_records, discriminator_loss_records = [], []
     val_denoiser_loss_records, val_discriminator_loss_records = [], []
+    val_loss_computed_indices = []
     print_loss_interval: int = config["print_loss_interval"]
     calc_eval_loss_interval: int = config["calc_eval_loss_interval"]
+    global_step_counter = 0
 
     for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
         dataloader: DataLoader = DataLoader(train_datasets[epoch_idx], batch_size=config["batch_size"], shuffle=True)
@@ -238,10 +240,12 @@ def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[Unpaire
                 print("Validation Loss")
                 print(f"step {epoch_idx}&{step_idx}", vaL_denoiser_loss)
                 print(f"step {epoch_idx}&{step_idx}", val_discriminator_loss_records)
+                val_loss_computed_indices.append(global_step_counter)
             
             torch.cuda.empty_cache()
+            global_step_counter += 1
 
     # save
     torch.save(denoiser.state_dict(), f"{save_dir}/denoiser.pth")
     torch.save(discriminator.state_dict(), f"{save_dir}/discriminator.pth")
-    return denoiser, (denoiser_loss_records, discriminator_loss_records), (val_denoiser_loss_records, val_discriminator_loss_records)
+    return denoiser, (denoiser_loss_records, discriminator_loss_records), (val_loss_computed_indices, val_denoiser_loss_records, val_discriminator_loss_records)

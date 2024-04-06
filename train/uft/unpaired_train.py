@@ -30,7 +30,7 @@ def unpaired_train_script(images_dir: str | None = None, checkpoint_dir: str | N
     val_datasets = create_unpaired_datasets(images_dir, num_epochs)
     
     # Train using adversarial learning approach
-    _, (denoiser_loss_records, discriminator_loss_records), (val_denoiser_loss_records, val_discriminator_loss_records) = train_loop(train_datasets, val_datasets, checkpoint_dir, save_dir)
+    _, (denoiser_loss_records, discriminator_loss_records), (val_loss_computed_indices, val_denoiser_loss_records, val_discriminator_loss_records) = train_loop(train_datasets, val_datasets, checkpoint_dir, save_dir)
     
     # Save loss_records in csv
     df_train_unpaired_loss = pd.DataFrame({
@@ -41,9 +41,8 @@ def unpaired_train_script(images_dir: str | None = None, checkpoint_dir: str | N
     df_train_unpaired_loss.to_csv(f"{save_dir}/unpaired_train_loss_records.csv", index=False)
 
     # Save validation loss_records in csv
-    calc_eval_loss_interval: int = config["calc_eval_loss_interval"]
     df_val_unpaired_loss = pd.DataFrame({
-        "step_idx": calc_eval_loss_interval * pd.Series(range(0, len(val_denoiser_loss_records))),
+        "step_idx": val_loss_computed_indices,
         "denoiser_loss": val_denoiser_loss_records,
         "discriminator_loss": val_discriminator_loss_records,
     })

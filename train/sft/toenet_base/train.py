@@ -45,7 +45,7 @@ def validate_loop(
             loss_mean += total_loss.cpu().item() * (1/(len(val_dataloader)))
     return loss_mean
 
-def train_loop(train_datasets: list[PairedDataset], val_datasets: list[PairedDataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, list[int], list[int]]:
+def train_loop(train_datasets: list[PairedDataset], val_datasets: list[PairedDataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, list[int], list[int], list[int]]:
     is_gpu = 1
 
     model, _, _ = load_checkpoint(checkpoint_dir, is_gpu)
@@ -67,6 +67,9 @@ def train_loop(train_datasets: list[PairedDataset], val_datasets: list[PairedDat
 
     loss_records = []
     val_loss_records = []
+    val_loss_computed_indices = []
+
+    global_step_counter = 0
 
     for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
         dataloader: DataLoader = DataLoader(train_datasets[epoch_idx], batch_size=config["batch_size"], shuffle=True)
@@ -101,10 +104,13 @@ def train_loop(train_datasets: list[PairedDataset], val_datasets: list[PairedDat
                 )
 
                 val_loss_records.append(val_loss)
+                val_loss_computed_indices.append(global_step_counter)
 
                 print("Validation Loss")
                 print(f"step {epoch_idx}&{step_idx}", val_loss)
 
+            global_step_counter += 1
+
     # save
     torch.save(model.state_dict(), f"{save_dir}/sft_toenet_on_sie.pth")
-    return model, loss_records, val_loss_records
+    return model, loss_records, val_loss_records, val_loss_computed_indices
