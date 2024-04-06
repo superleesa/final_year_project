@@ -1,5 +1,8 @@
 from typing import List, Literal
-from src.toenet.test import load_checkpoint
+from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).parent.parent))
+from utils.utils import load_checkpoint
 import numpy as np
 import utils.metrics as metrics
 from torch.utils.data import DataLoader
@@ -19,14 +22,14 @@ def save_image(image: np.ndarray, image_name: str, save_dir: str) -> None:
     cv2.imwrite(save_path, image)
 
 
-def validate(dataloader: DataLoader, save_dir: "str", checkpoint_dir: str, save_images: SaveImageType = "sample") -> tuple[np.ndarray, np.ndarray]:
+def evaluate(dataloader: DataLoader, save_dir: "str", checkpoint_dir: str, save_images: SaveImageType = "sample") -> tuple[np.ndarray, np.ndarray]:
     """
     Ensure all images have the same size
     """
     assert save_images in ["all", "sample", "no"], "save_images parameter must be one of all, sample, or no"
 
     # note: model is already in gpu
-    model, _, _ = load_checkpoint(checkpoint_dir, 1)  # 1 for GPU
+    model = load_checkpoint(checkpoint_dir, True)  # True for GPU
     model.eval()
 
     psnr_output_batches: List[np.ndarray] = []
