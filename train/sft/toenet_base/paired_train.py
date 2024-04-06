@@ -8,7 +8,7 @@ sys.path.append(Path(__file__).parent.parent.parent.parent)
 print(sys.path)
 
 from utils.preprocess import create_paired_datasets
-from train import train
+from train import train_loop
 from utils.utils import create_unique_save_dir
 from pathlib import Path
 import yaml
@@ -28,20 +28,33 @@ def paired_train_script(images_dir: str = None, checkpoint_dir: str = None, save
     save_dir = create_unique_save_dir(save_dir)
 
     # Create paired dataset from input images directory
-    datasets = create_paired_datasets(images_dir, num_datasets=num_epochs)
+    train_datasets = create_paired_datasets(images_dir, num_datasets=num_epochs)
+    val_datasets = create_paired_datasets(images_dir, num_datasets=num_epochs)
     
     # Train TOENet model using supervised fine-tuning
-    _, sft_loss_records = train(datasets, checkpoint_dir, save_dir)  # Checkpoints will be saved inside `save_dir`
+    _, train_loss_records, val_loss_records = train_loop(train_datasets, val_datasets, checkpoint_dir, save_dir)  # Checkpoints will be saved inside `save_dir`
 
-    # Save loss_records in csv
-    paired_loss_df = pd.DataFrame(sft_loss_records, columns=["loss"])
-    paired_loss_df.to_csv(f"{save_dir}/paired_loss_records.csv", index=False)
+    # Save train_loss_records in csv
+    df_train_loss = pd.DataFrame(
+        {"step_idx": pd.Series(range(len(train_loss_records))),
+         "loss": train_loss_records})
+    df_train_loss.to_csv(f"{save_dir}/train_loss_records.csv", index=False)
+
+    # Save val_loss_records in csv
+    calc_eval_loss_interval: int = config["calc_eval_loss_interval"]
+    df_val_loss = pd.DataFrame({
+        "step_idx": calc_eval_loss_interval * pd.Series(range(0, len(val_loss_records))),
+        "loss": val_loss_records
+    })
+    df_val_loss.to_csv(f"{save_dir}/val_loss_records.csv", index=False)
 
     # Create matplotlib plot for loss curve
-    plt.plot(sft_loss_records)
+    plt.plot(df_train_loss["step_idx"], df_train_loss["denoiser_loss"], label="train")
+    plt.plot(df_val_loss["step_idx"], df_val_loss["denoiser_loss"], label="validation")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.title("Paired Image Training Loss Curve")
+    plt.legend()
     plt.savefig(f"{save_dir}/paired_loss_curve.png")
     plt.close()
 
