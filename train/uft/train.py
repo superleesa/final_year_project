@@ -16,6 +16,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
+from src.utils.preprocess import UnpairedDataset
 
 
 
@@ -130,7 +131,7 @@ def validate_loop(
     return denoiser_loss_mean, discriminator_loss_mean
 
 
-def train_loop(train_datasets: list[Dataset], val_datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]]]:
+def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[UnpairedDataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]], tuple[list[int], list[int]]]:
     assert len(train_datasets) == len(val_datasets)
 
     is_gpu = 1
@@ -147,8 +148,8 @@ def train_loop(train_datasets: list[Dataset], val_datasets: list[Dataset], check
         denoiser.parameters(), lr=config["denoiser_adam_lr"]
     )
     denoiser_adversarial_criterion = torch.nn.BCELoss()
-    clip_min: int | float = config.get("clip_min")
-    clip_max: int | float = config.get("clip_max")
+    clip_min: float | None = config.get("clip_min")
+    clip_max: float | None = config.get("clip_max")
     denoiser_loss_b1: float = config["denoiser_loss_b1"]
     denoiser_loss_b2: float = config["denoiser_loss_b2"]
 
