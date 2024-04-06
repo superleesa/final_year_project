@@ -66,7 +66,7 @@ def calc_denoiser_adversarial_loss(
 def calc_denoiser_ssim_loss(
     predicted: torch.Tensor, true: torch.Tensor
 ) -> torch.Tensor:
-    return 1 - structural_similarity_index_measure(predicted, true, data_range=1.0)
+    return 1 - structural_similarity_index_measure(predicted, true)
 
 
 def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]]]:
