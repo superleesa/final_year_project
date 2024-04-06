@@ -5,10 +5,9 @@ from pathlib import Path
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
-# sys.path.append('/home/student/Documents/MDS12/sho/final_year_project/utils')
 print(sys.path)
 
-from utils.preprocess import create_train_and_validation_datasets
+from utils.preprocess import create_train_and_validation_paired_datasets
 from train import train_loop
 from utils.utils import create_unique_save_dir
 from pathlib import Path
@@ -30,7 +29,7 @@ def paired_train_script(images_dir: str | None = None, checkpoint_dir: str | Non
     save_dir = create_unique_save_dir(save_dir)
 
     # Create paired dataset from input images directory
-    train_datasets, val_datasets = create_train_and_validation_datasets(images_dir, num_datasets=num_epochs, train_ratio=train_ratio)
+    train_datasets, val_datasets = create_train_and_validation_paired_datasets(images_dir, num_datasets=num_epochs, train_ratio=train_ratio)
     
     # Train TOENet model using supervised fine-tuning
     _, train_loss_records, val_loss_records, val_loss_computed_indices = train_loop(train_datasets, val_datasets, checkpoint_dir, save_dir)  # Checkpoints will be saved inside `save_dir`

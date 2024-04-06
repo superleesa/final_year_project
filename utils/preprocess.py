@@ -1,5 +1,6 @@
 from typing import List, Optional, Tuple, Union
 import numpy as np
+from utils.transforms import train_paired_transform, train_unpaired_transform, eval_transform, CoupledCompose
 from torch.utils.data import Dataset
 import torch
 import os
@@ -7,7 +8,6 @@ from torchvision.transforms import v2
 import random
 import cv2
 import random
-from transforms import train_paired_transform, train_unpaired_transform, eval_transform, CoupledCompose
 
 # dataset directory constants
 NOISY_IMAGE_DIR_NAME = "noisy"
@@ -179,7 +179,7 @@ def create_train_and_validation_paired_datasets(dataset_dir: str, num_datasets: 
 
     return train_dataset, validation_dataset
 
-def create_train_and_validation_unpaired_datasets(dataset_dir: str, num_datasets: int = 1, train_ratio: float = 0.8) -> tuple[list[UnpairedTrainDataset], list[UnpairedTrainDataset]]:
+def create_train_and_validation_unpaired_datasets(dataset_dir: str, num_datasets: int = 1, train_ratio: float = 0.8) -> tuple[list[UnpairedDataset], list[UnpairedDataset]]:
     
     train_dataset_index, validation_dataset_index = split_indices_randomely(dataset_dir, train_ratio)
 
@@ -195,7 +195,7 @@ def create_train_and_validation_unpaired_datasets(dataset_dir: str, num_datasets
     train_gt_images = [train_gt_image for train_gt_image, _ in sorted(zip(train_gt_images, train_gt_image_names), key=lambda x: x[1])]
     gt_images = [validation_gt_image for validation_gt_image, _ in sorted(zip(validation_gt_images, validation_gt_image_names), key=lambda x: x[1])]
     
-    train_dataset = [UnpairedTrainDataset(train_noisy_images, train_gt_images, train_paired_transform) for _ in range(num_datasets)]
-    validation_dataset = [UnpairedTrainDataset(validation_noisy_images, validation_gt_images, train_paired_transform) for _ in range(num_datasets)]
+    train_dataset = [UnpairedDataset(train_noisy_images, train_gt_images, train_paired_transform) for _ in range(num_datasets)]
+    validation_dataset = [UnpairedDataset(validation_noisy_images, validation_gt_images, train_paired_transform) for _ in range(num_datasets)]
 
     return train_dataset, validation_dataset
