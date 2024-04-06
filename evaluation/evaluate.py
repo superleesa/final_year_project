@@ -19,7 +19,7 @@ def save_image(image: np.ndarray, image_name: str, save_dir: str) -> None:
     cv2.imwrite(save_path, image)
 
 
-def validate(dataloader: DataLoader, save_dir: "str", checkpoint_dir: str, save_images: SaveImageType = "sample") -> tuple[np.ndarray, np.ndarray]:
+def evaluate(dataloader: DataLoader, save_dir: "str", checkpoint_dir: str, save_images: SaveImageType = "sample") -> tuple[np.ndarray, np.ndarray]:
     """
     Ensure all images have the same size
     """
