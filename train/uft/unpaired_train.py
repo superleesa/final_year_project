@@ -14,7 +14,7 @@ from pathlib import Path
 import yaml
 
 # For unpaired images training in adversarial learning
-def unpaired_train_script(images_dir: str = None, checkpoint_dir: str = None, save_dir: str = None) -> None:
+def unpaired_train_script(images_dir: str | None = None, checkpoint_dir: str | None = None, save_dir: str | None = None) -> None:
 
     # load params from yml file
     config_path = Path(__file__).parent / "config.yml"

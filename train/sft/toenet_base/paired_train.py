@@ -14,7 +14,7 @@ from pathlib import Path
 import yaml
 
 # For paired images training in TOENet
-def paired_train_script(images_dir: str = None, checkpoint_dir: str = None, save_dir: str = None) -> None:
+def paired_train_script(images_dir: str | None = None, checkpoint_dir: str | None = None, save_dir: str | None = None) -> None:
 
     # load params from yml file
     config_path = Path(__file__).parent / "config.yml"
