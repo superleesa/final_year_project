@@ -1,7 +1,6 @@
 denoiser_adam_lr: 0.0001
 discriminator_adam_lr: 0.0001
 num_epochs: 10
-adam_lr: 0.001
 step_lr_step_size: 30
 step_lr_gamma: 0.1
 batch_size: 4

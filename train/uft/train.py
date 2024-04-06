@@ -16,7 +16,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
-from src.utils.preprocess import UnpairedDataset
+from utils.preprocess import UnpairedDataset
 
 
 
@@ -219,8 +219,8 @@ def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[Unpaire
 
             if step_idx % print_loss_interval == 0:
                 print("Training Loss")
-                print(f"step {epoch_idx}&{step_idx}", denoiser_loss_records[-1])
-                print(f"step {epoch_idx}&{step_idx}", discriminator_loss_records[-1])
+                print(f"Denoiser Loss at epoch={epoch_idx}&step={step_idx}", denoiser_loss_records[-1])
+                print(f"Discriminator Loss at epoch={epoch_idx}&step={step_idx}", discriminator_loss_records[-1])
 
             if step_idx % calc_eval_loss_interval == 0:
                 val_dataloader = DataLoader(val_datasets[epoch_idx], batch_size=config["batch_size"])
@@ -238,8 +238,8 @@ def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[Unpaire
                 val_denoiser_loss_records.append(vaL_denoiser_loss)
                 val_discriminator_loss_records.append(val_discriminator_loss)
                 print("Validation Loss")
-                print(f"step {epoch_idx}&{step_idx}", vaL_denoiser_loss)
-                print(f"step {epoch_idx}&{step_idx}", val_discriminator_loss_records)
+                print(f"Denoiser Loss at epoch={epoch_idx}&step={step_idx}:", vaL_denoiser_loss)
+                print(f"Discriminator Loss epoch={epoch_idx}&step={step_idx}", val_discriminator_loss)
                 val_loss_computed_indices.append(global_step_counter)
             
             torch.cuda.empty_cache()

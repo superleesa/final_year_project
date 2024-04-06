@@ -57,7 +57,7 @@ class EvaluationDataset(Dataset):
         ground_truth_image = self.transformer(self.ground_truth_images[idx].copy())
         return sand_dust_image, ground_truth_image, self.output_image_names[idx]
 
-class UnpairedTrainDataset:
+class UnpairedDataset:
     """This class must be instantiated for each epoch to change pairs."""
     def __init__(self, sand_dust_images: List[np.ndarray],
                  clear_images: List[np.ndarray],
@@ -111,7 +111,7 @@ def create_paired_datasets(dataset_dir: str, num_datasets: int = 1) -> List[Pair
 
     return [PairedDataset(noisy_images, gt_images, train_paired_transform) for _ in range(num_datasets)]
 
-def create_unpaired_datasets(dataset_dir: str, num_datasets: int = 1) -> List[UnpairedTrainDataset]:
+def create_unpaired_datasets(dataset_dir: str, num_datasets: int = 1) -> List[UnpairedDataset]:
     """
     dataset_dir: directory of the dataset (e.g. "Data/Synthetic_images/")
     Do not use thsi funciton when evaluating
@@ -124,7 +124,7 @@ def create_unpaired_datasets(dataset_dir: str, num_datasets: int = 1) -> List[Un
     clear_images, clear_image_names = load_images_in_a_directory(clear_path)
     clear_images = sort_image_by_filenames(clear_images, clear_image_names)
 
-    return [UnpairedTrainDataset(noisy_images, clear_images, train_unpaired_transform) for _ in range(num_datasets)]
+    return [UnpairedDataset(noisy_images, clear_images, train_unpaired_transform) for _ in range(num_datasets)]
 
 
 def create_evaluation_dataset(dataset_dir: str) -> EvaluationDataset:
