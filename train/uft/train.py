@@ -83,7 +83,7 @@ def validate_loop(
         discriminator_criterion: nn.BCELoss,
         clip_min: float | None,
         clip_max: float | None,
-) -> tuple[int, int]:
+) -> tuple[float, float]:
 
     denoiser.eval()
     discriminator.eval()
@@ -95,7 +95,7 @@ def validate_loop(
         sand_dust_images, clear_images = sand_dust_images.cuda(), clear_images.cuda()
 
         with torch.no_grad():
-            # update denoiser
+            # denoiser loss
             denoised_images = denoiser(sand_dust_images)
             denoised_images_predicted_labels = discriminator(
                 denoised_images
@@ -116,7 +116,7 @@ def validate_loop(
             denoiser_loss_mean += denoiser_loss.cpu().item() * (1/(len(val_dataloader)))
 
 
-            # update discriminator
+            # discriminator loss
             clear_images = clear_images.cuda()
             normal_images_predicted_labels = discriminator(clear_images).flatten()
 

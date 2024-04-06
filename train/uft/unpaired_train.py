@@ -41,9 +41,9 @@ def unpaired_train_script(images_dir: str = None, checkpoint_dir: str = None, sa
     df_train_unpaired_loss.to_csv(f"{save_dir}/unpaired_train_loss_records.csv", index=False)
 
     # Save validation loss_records in csv
-    print_loss_interval: int = config["print_loss_interval"]
+    calc_eval_loss_interval: int = config["calc_eval_loss_interval"]
     df_val_unpaired_loss = pd.DataFrame({
-        "step_idx": print_loss_interval * pd.Series(range(0, len(val_denoiser_loss_records))),
+        "step_idx": calc_eval_loss_interval * pd.Series(range(0, len(val_denoiser_loss_records))),
         "denoiser_loss": val_denoiser_loss_records,
         "discriminator_loss": val_discriminator_loss_records,
     })
