@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Power-Denoise</title>
+</head>
+
+<body>
+    <h1>Power-Denoise</h1>
+    <p>Upload an image and click the "Denoise" button to remove noise from the image.</p>
+    <div id="form-wrapper">
+        <form id="image-form" enctype="multipart/form-data">
+            <input type="file" id="image-input" name="image" accept="image/*" required>
+            <button type="submit">Denoise</button>
+            <div id="image-container" style="margin-top: 15px;"></div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('image-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Create FormData object to send file
+            const formData = new FormData();
+            const fileInput = document.getElementById('image-input').files[0];
+            formData.append('image', fileInput);
+
+            // Fetch endpoint with FormData
+            fetch("/restore-image", {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch image');
+                    }
+                    // Return the response data
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Create a URL for the blob
+                    const imageUrl = URL.createObjectURL(blob);
+
+                    // Create an image element and set its source to the blob URL
+                    const image = document.createElement('img');
+                    image.src = imageUrl;
+
+                    // Append the image to a container in the DOM
+                    document.getElementById('image-container').innerHTML = ''; // Clear previous image
+                    document.getElementById('image-container').appendChild(image);
+                })
+                .catch(error => {
+                    console.error('Error fetching image:', error);
+                });
+        });
+    </script>
+</body>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+    }
+    
+    h1 {
+        text-align: center;
+    }
+    
+    #form-wrapper {
+        display: flex;
+        justify-content: center;
+    }
+    
+    p {
+        text-align: center;
+    }
+    
+    form {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin: 20px 0;
+        width: 40%;
+    }
+    
+    input {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    
+    button {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+    }
+    
+    button:hover {
+        background-color: #0056b3;
+    }
+    
+    h2 {
+        text-align: center;
+    }
+    
+    img {
+        display: block;
+        margin: 0 auto;
+    }
+</style>
+
+</html>

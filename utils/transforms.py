@@ -8,13 +8,13 @@ import numpy as np
 W_THRESHOLD = 440
 H_THRESHOLD = 330
 
-class CoupledToTensorTransform():
+class CoupledToTensorTransform:
     def __call__(self, noisy_image: torch.Tensor, ground_truth_image: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         ground_truth_image = v2.functional.to_tensor(ground_truth_image)
         noisy_image = v2.functional.to_tensor(noisy_image)
         return noisy_image, ground_truth_image
 
-class CoupledRandomResizeCropTransform():
+class CoupledRandomResizeCropTransform:
     def __call__(self, noisy_image: torch.Tensor, ground_truth_image: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         CROP_RATIO = 3/4
 
@@ -29,7 +29,7 @@ class CoupledRandomResizeCropTransform():
         noisy_image = v2.functional.resize(noisy_image, size=(H_THRESHOLD, W_THRESHOLD))
         return noisy_image, ground_truth_image
 
-class CoupledRandomHorizontalFlipTransform():
+class CoupledRandomHorizontalFlipTransform:
     def __call__(self, noisy_image: torch.Tensor, ground_truth_image: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         if random.random() > 0.5:
             ground_truth_image = v2.functional.hflip(ground_truth_image)
@@ -55,7 +55,7 @@ class CoupledCompose:
         return noisy_image, ground_truth_image
     
 
-class RandomResizeCropTransform():
+class RandomResizeCropTransform:
     def __call__(self, image: torch.Tensor) -> torch.Tensor:
         CROP_RATIO = 3/4  # TODO: make this random
 
