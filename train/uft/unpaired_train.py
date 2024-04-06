@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from train import train
+from train import train_loop
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -29,7 +29,7 @@ def unpaired_train_script(images_dir: str = None, checkpoint_dir: str = None, sa
     datasets = create_unpaired_datasets(images_dir, num_epochs)
     
     # Train using adversarial learning approach
-    _, (denoiser_loss_records, discriminator_loss_records) = train(datasets, checkpoint_dir, save_dir)
+    _, (denoiser_loss_records, discriminator_loss_records) = train_loop(datasets, checkpoint_dir, save_dir)
     
     # Save loss_records in csv
     unpaired_loss_df = pd.DataFrame({
