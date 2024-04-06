@@ -8,27 +8,14 @@ from pathlib import Path
 from torchmetrics.functional.image import structural_similarity_index_measure
 from tqdm import tqdm
 
+from discriminator import Discriminator
+
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
-print(sys.path)
 
 
 from src.toenet.TOENet import TOENet
 from src.toenet.test import load_checkpoint
-
-
-
-def make_discriminator_model():
-    return nn.Sequential(
-        nn.Conv2d(3, 64, 5, 2, 0),
-        nn.LeakyReLU(),
-        nn.Dropout(0.3),
-        nn.Conv2d(64, 128, 5, 2, 0),
-        nn.LeakyReLU(),
-        nn.Dropout(0.3),
-        nn.Flatten(),
-        nn.Linear(1095680, 1),
-    )
 
 
 
@@ -72,7 +59,7 @@ def calc_denoiser_ssim_loss(
 def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]]]:
     is_gpu = 1
     denoiser, _, _ = load_checkpoint(checkpoint_dir, is_gpu)  # base model already in gpu
-    discriminator_model = make_discriminator_model()
+    discriminator_model = Discriminator()
     denoiser.train()
     discriminator_model.train()
     discriminator_model.cuda()
@@ -117,15 +104,14 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
                 denoised_images
             ).flatten()
             
+            denoiser_loss = (denoiser_loss_b1 * calc_denoiser_adversarial_loss(
                 denoiser_criterion, denoised_images_predicted_labels, clip_min, clip_max
             ) + denoiser_loss_b2 * calc_denoiser_ssim_loss(
                 denoised_images, sand_dust_images
-            )
+            ))
             denoiser_loss.backward()
             denoiser_optimizer.step()
             denoiser_loss_records.append(denoiser_loss.cpu().item())
-            del denoiser_loss
-            torch.cuda.empty_cache()
 
 
             # update discriminator
@@ -142,6 +128,7 @@ def train(datasets: list[Dataset], checkpoint_dir: str, save_dir: str) -> tuple[
                 denoised_images_predicted_labels_for_discriminator,
                 normal_images_predicted_labels,
             )
+            
             discriminator_loss.backward()
             discriminator_optimizer.step()
             discriminator_loss_records.append(discriminator_loss.cpu().item())
