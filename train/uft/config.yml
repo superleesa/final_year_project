@@ -1,11 +1,11 @@
 denoiser_adam_lr: 0.0001
 discriminator_adam_lr: 0.0001
 num_epochs: 10
-adam_lr: 0.001
 step_lr_step_size: 30
 step_lr_gamma: 0.1
 batch_size: 4
 print_loss_interval: 100
+calc_eval_loss_interval: 100
 denoiser_loss_b1: 0.5
 denoiser_loss_b2: 0.5
 checkpoint_dir: "/home/student/Documents/MDS12/satoshi/final_year_project/src/toenet/checkpoint/"
