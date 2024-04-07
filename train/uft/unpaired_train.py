@@ -8,7 +8,7 @@ from train import train_loop
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from utils.preprocess import create_unpaired_datasets
+from utils.preprocess import create_unpaired_datasets, create_train_and_validation_unpaired_datasets
 from utils.utils import create_unique_save_dir
 from pathlib import Path
 import yaml
@@ -24,10 +24,10 @@ def unpaired_train_script(images_dir: str | None = None, checkpoint_dir: str | N
     checkpoint_dir = checkpoint_dir or config["checkpoint_dir"]
     save_dir = save_dir or config["save_dir"]
     num_epochs = config["num_epochs"]
+    train_ratio = config.get("train_ratio") or 0.8
 
     save_dir = create_unique_save_dir(save_dir)
-    train_datasets = create_unpaired_datasets(images_dir, num_epochs)
-    val_datasets = create_unpaired_datasets(images_dir, num_epochs)
+    train_datasets, val_datasets = create_train_and_validation_unpaired_datasets(images_dir, num_epochs, train_ratio=train_ratio)
     
     # Train using adversarial learning approach
     _, (denoiser_loss_records, discriminator_loss_records), (val_loss_computed_indices, val_denoiser_loss_records, val_discriminator_loss_records) = train_loop(train_datasets, val_datasets, checkpoint_dir, save_dir)
