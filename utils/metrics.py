@@ -2,27 +2,14 @@ import torch
 from torchmetrics.functional.image import structural_similarity_index_measure
 from skimage.io import imread
 from skimage.transform import resize
-
-from typing import Sequence
-
-
-MAX_INTENSITY = torch.tensor(1.0)  # should be 1 because image is normalized
-PSNR_CONSTANT = 20 * torch.log10(MAX_INTENSITY)
-
-def multiply(array: Sequence[int]):
-    output = 1
-    for num in array:
-        output *= num
-    return output
+from torch.nn.functional import mse_loss
+from torchmetrics.functional.image import peak_signal_noise_ratio
 
 def mse_per_sample(predicted, true):
-    # batch_size, channels, height, width
-    num_pixels_per_sample = multiply(true.shape[1:])
-    dim = (1, 2, 3) if len(true.shape) == 4 else (1, 2)
-    return ((predicted - true)**2).sum(dim=dim) / num_pixels_per_sample
+    return mse_loss(predicted, true)
 
-def psnr_per_sample(mse_per_sample):
-    return PSNR_CONSTANT - 10*torch.log10(mse_per_sample)
+def psnr_per_sample(predicted, true):
+    return peak_signal_noise_ratio(predicted, true, data_range=255)
 
 def ssim_per_sample(predicted, true):
     return structural_similarity_index_measure(predicted, true, reduction="none")
