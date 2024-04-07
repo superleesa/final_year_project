@@ -131,11 +131,11 @@ def validate_loop(
     return denoiser_loss_mean, discriminator_loss_mean
 
 
-def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[UnpairedDataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]], tuple[list[int], list[int]]]:
+def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[UnpairedDataset], checkpoint_path: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]], tuple[list[int], list[int]]]:
     assert len(train_datasets) == len(val_datasets)
 
     is_gpu = True
-    denoiser = load_checkpoint(checkpoint_dir, is_gpu)  # base model already in gpu
+    denoiser = load_checkpoint(checkpoint_path, is_gpu)  # base model already in gpu
     discriminator = Discriminator().cuda()
 
     # load params from yml file
