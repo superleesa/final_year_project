@@ -268,9 +268,7 @@ def create_train_and_validation_paired_datasets(
     noisy_dataset_path = os.path.join(dataset_dir, NOISY_IMAGE_DIR_NAME)
     gt_path = os.path.join(dataset_dir, GROUND_TRUTH_IMAGE_DIR_NAME)
     noisy_images, _ = load_dataset(noisy_dataset_path)
-    print(_)
     gt_images, _ = load_dataset(gt_path)
-    print(_)
 
     (
         noisy_train_images,
