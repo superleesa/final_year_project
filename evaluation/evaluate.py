@@ -10,7 +10,7 @@ import torch
 import random
 import os
 import cv2
-from utils.postprocess import postprocess
+from utils.postprocess import postprocess_tensor
 
 
 
@@ -40,7 +40,7 @@ def evaluate(dataloader: DataLoader, save_dir: "str", checkpoint_path: str, save
             sand_dust_images = sand_dust_images.cuda()
             denoised_images = model(sand_dust_images)
             ground_truth_images = ground_truth_images.cuda()
-            denoised_images = postprocess(denoised_images)
+            denoised_images = postprocess_tensor(denoised_images)
 
             psnr_per_sample = metrics.psnr_per_sample(denoised_images, ground_truth_images).cpu().numpy()
             ssim_per_sample = metrics.ssim_per_sample(denoised_images, ground_truth_images).cpu().numpy()
