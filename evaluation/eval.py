@@ -52,8 +52,8 @@ def evaluation_script(images_dir: str | None = None, checkpoint_path: str | None
     plt.close()
 
     # record avg psnr and ssim as yaml
-    avg_psnr = df_metrics["psnr"].mean()
-    avg_ssim = df_metrics["ssim"].mean()
+    avg_psnr = df_metrics["psnr"].mean().item()
+    avg_ssim = df_metrics["ssim"].mean().item()
     with open(os.path.join(save_dir, 'avg_metrics.yaml'), 'w') as f:
         yaml.dump({"avg_psnr": avg_psnr, "avg_ssim": avg_ssim}, f)
 
