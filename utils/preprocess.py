@@ -206,16 +206,16 @@ def create_evaluation_dataset(dataset_dir: str) -> EvaluationDataset:
     )
 
 
-def split_indices_randomely(
-    num_images: int, train_ratio: float
-) -> tuple[list[int], list[int]]:
-    """
-    Prereq: ensure the sepcified directory only contains relevant images
-    """
-    indices = list(range(num_images))
-    random.shuffle(indices)
-    thres = int(num_images * train_ratio)
-    return indices[:thres], indices[thres:]
+# def split_indices_randomely(
+#     num_images: int, train_ratio: float
+# ) -> tuple[list[int], list[int]]:
+#     """
+#     Prereq: ensure the sepcified directory only contains relevant images
+#     """
+#     indices = list(range(num_images))
+#     random.shuffle(indices)
+#     thres = int(num_images * train_ratio)
+#     return indices[:thres], indices[thres:]
 
 
 def train_val_split(
@@ -256,38 +256,52 @@ def train_val_split_paired(
     y_validation_images = [y_images[i] for i in validation_indices]
     return x_train_images, y_train_images, x_validation_images, y_validation_images
 
+def split_indices_randomely(dataset_dir: str, train_ratio: float) -> tuple[list[int], list[int]]:
+    noisy_path = os.path.join(dataset_dir, NOISY_IMAGE_DIR_NAME)
+    num_images = len(os.listdir(noisy_path))
+    indices = list(range(num_images))
+    random.shuffle(indices)
+    thres = int(num_images*train_ratio)
+    return indices[:thres], indices[thres:]
 
-def create_train_and_validation_paired_datasets(
-    dataset_dir: str, num_datasets: int = 1, train_ratio: float = 0.8
-) -> tuple[list[PairedDataset], list[PairedDataset]]:
-    """
-    Create both train and valiation dataset at the same time, ensuring there is no data leakage.
-    This function is for paired datasets.
-    """
+def load_images(train_indices: List[int], validation_indices: List[int], images: List[np.ndarray], image_names: List[str]) -> tuple[List[np.ndarray], List[str], List[np.ndarray], List[str]]:
+    loaded_train_images = [images[i] for i in train_indices]
+    loaded_train_image_names = [image_names[i] for i in train_indices]
+    loaded_validation_images = [images[i] for i in validation_indices]
+    loaded_validation_image_names = [image_names[i] for i in validation_indices]
+    return loaded_train_images, loaded_train_image_names, loaded_validation_images, loaded_validation_image_names
 
-    noisy_dataset_path = os.path.join(dataset_dir, NOISY_IMAGE_DIR_NAME)
+def load_images_in_a_directory(directory_path: str) -> tuple[List[np.ndarray], List[str]]:
+    images = []
+    image_names = []
+    for filename in os.listdir(directory_path):
+        if filename.endswith("png") or filename.endswith("jpg"):
+            image_path = os.path.join(directory_path, filename)
+            image = cv2.imread(image_path)
+
+            images.append(image)
+            image_names.append(filename)
+
+    return images, image_names
+
+def create_train_and_validation_paired_datasets(dataset_dir: str, num_datasets: int = 1, train_ratio: float = 0.8) -> tuple[list[PairedDataset], list[PairedDataset]]:
+    
+    train_dataset_index, validation_dataset_index = split_indices_randomely(dataset_dir, train_ratio)
+
+    noisy_path = os.path.join(dataset_dir, NOISY_IMAGE_DIR_NAME)
+    noisy_images, noisy_image_names = load_images_in_a_directory(noisy_path)
+    train_noisy_images, train_noisy_image_names, validation_noisy_images, validation_noisy_image_names = load_images(train_dataset_index, validation_dataset_index, noisy_images, noisy_image_names)
+    train_noisy_images = sort_image_by_filenames(train_noisy_images, train_noisy_image_names)
+    validation_noisy_images = sort_image_by_filenames(validation_noisy_images, validation_noisy_image_names)
+
     gt_path = os.path.join(dataset_dir, GROUND_TRUTH_IMAGE_DIR_NAME)
-    noisy_images, _ = load_dataset(noisy_dataset_path)
-    gt_images, _ = load_dataset(gt_path)
-
-    (
-        noisy_train_images,
-        gt_train_images,
-        noisy_validation_images,
-        gt_validation_images,
-    ) = train_val_split_paired(noisy_images, gt_images, train_ratio=train_ratio)
-
-    # handling ground truth data
-    train_dataset = [
-        PairedDataset(noisy_train_images, gt_train_images, train_paired_transform)
-        for _ in range(num_datasets)
-    ]
-    validation_dataset = [
-        PairedDataset(
-            noisy_validation_images, gt_validation_images, train_paired_transform
-        )
-        for _ in range(num_datasets)
-    ]
+    gt_images, gt_image_names = load_images_in_a_directory(gt_path)
+    train_gt_images, train_gt_image_names, validation_gt_images, validation_gt_image_names = load_images(train_dataset_index, validation_dataset_index, gt_images, gt_image_names)
+    train_gt_images = [train_gt_image for train_gt_image, _ in sorted(zip(train_gt_images, train_gt_image_names), key=lambda x: x[1])]
+    gt_images = [validation_gt_image for validation_gt_image, _ in sorted(zip(validation_gt_images, validation_gt_image_names), key=lambda x: x[1])]
+    
+    train_dataset = [PairedDataset(train_noisy_images, train_gt_images, train_paired_transform) for _ in range(num_datasets)]
+    validation_dataset = [PairedDataset(validation_noisy_images, validation_gt_images, train_paired_transform) for _ in range(num_datasets)]
 
     return train_dataset, validation_dataset
 
