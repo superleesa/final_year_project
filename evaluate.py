@@ -36,25 +36,22 @@ def validate(dataloader: DataLoader, save_dir: "str", checkpoint_dir: str, save_
         with torch.no_grad():
             sand_dust_images = sand_dust_images.cuda()
             denoised_images = model(sand_dust_images)
-
             ground_truth_images = ground_truth_images.cuda()
-            mse_per_sample = metrics.mse_per_sample(denoised_images, ground_truth_images)
+            denoised_images = postprocess(denoised_images)
+
             psnr_per_sample = metrics.psnr_per_sample(denoised_images, ground_truth_images).cpu().numpy()
             ssim_per_sample = metrics.ssim_per_sample(denoised_images, ground_truth_images).cpu().numpy()
-
             psnr_output_batches.append(psnr_per_sample)
             ssim__output_batches.append(ssim_per_sample)
             
 
             if save_images == "all":
-                denoised_images = postprocess(denoised_images)
                 for denoised_image, image_name in zip(denoised_images, image_names):
                     save_image(denoised_image, image_name, save_dir)
             
             elif save_images == "sample":
                 image_idx = random.randint(0, len(denoised_images)-1)
                 denoised_image, image_name = denoised_images[image_idx], image_names[image_idx]
-                denoised_image = postprocess(denoised_image)
                 save_image(denoised_image, image_name, save_dir)
 
 
