@@ -2,12 +2,12 @@ from fire import Fire
 from torch.utils.data import DataLoader
 import pandas as pd
 import os
-from datetime import datetime
 import yaml
 from pathlib import Path
 from evaluate import evaluate
 from utils.preprocess import create_evaluation_dataset
 from utils.utils import create_unique_save_dir
+import matplotlib.pyplot as plt
 
 def evaluation_script(images_dir: str | None = None, checkpoint_dir: str | None = None, save_dir: str | None = None, save_images_type: str = "all") -> None:
 
@@ -34,6 +34,28 @@ def evaluation_script(images_dir: str | None = None, checkpoint_dir: str | None 
         'ssim': ssim_per_sample
     })
     df_metrics.to_csv(os.path.join(save_dir, 'evaluation_results.csv'), index=False)
+
+    # create histogram for psnr
+    plt.hist(df_metrics["psnr"])
+    plt.xlabel("PSNR")
+    plt.ylabel("Number of Images")
+    plt.title("Distribution of PSNR")
+    plt.savefig(os.path.join(save_dir, "psnr_distribution.png"))
+    plt.close()
+
+    # create histogram for ssim
+    plt.hist(df_metrics["ssim"])
+    plt.xlabel("SSIM")
+    plt.ylabel("Number of Images")
+    plt.title("Distribution of SSIM")
+    plt.savefig(os.path.join(save_dir, "ssim_distribution.png"))
+    plt.close()
+
+    # record avg psnr and ssim as yaml
+    avg_psnr = df_metrics["psnr"].mean()
+    avg_ssim = df_metrics["ssim"].mean()
+    with open(os.path.join(save_dir, 'avg_metrics.yaml'), 'w') as f:
+        yaml.dump({"avg_psnr": avg_psnr, "avg_ssim": avg_ssim}, f)
 
 
 if __name__ == "__main__":
