@@ -15,7 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 
 from src.toenet.TOENet import TOENet
-from src.toenet.test import load_checkpoint
+from utils.utils import load_checkpoint
 from utils.preprocess import UnpairedDataset
 
 
@@ -134,8 +134,8 @@ def validate_loop(
 def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[UnpairedDataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]], tuple[list[int], list[int]]]:
     assert len(train_datasets) == len(val_datasets)
 
-    is_gpu = 1
-    denoiser, _, _ = load_checkpoint(checkpoint_dir, is_gpu)  # base model already in gpu
+    is_gpu = True
+    denoiser = load_checkpoint(checkpoint_dir, is_gpu)  # base model already in gpu
     discriminator = Discriminator().cuda()
 
     # load params from yml file
