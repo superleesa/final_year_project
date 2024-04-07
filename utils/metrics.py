@@ -9,7 +9,7 @@ def mse_per_sample(predicted, true):
     return mse_loss(predicted, true)
 
 def psnr_per_sample(predicted, true):
-    return peak_signal_noise_ratio(predicted, true, data_range=255)
+    return peak_signal_noise_ratio(predicted, true, data_range=255, reduction="none")
 
 def ssim_per_sample(predicted, true):
     return structural_similarity_index_measure(predicted, true, reduction="none")
