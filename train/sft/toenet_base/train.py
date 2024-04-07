@@ -27,6 +27,7 @@ def validate_loop(
         loss_gamma2: float,
         color_loss_criterion: nn.CosineSimilarity,
         l2_criterion: nn.MSELoss,
+        batch_size: int
 ) -> float:
 
     model.eval()
@@ -42,7 +43,7 @@ def validate_loop(
             total_loss = loss_gamma1 * l2 + loss_gamma2 * color_loss
 
             # FIXME: technically this is incorrect because the last batch might have a different size
-            loss_mean += total_loss.cpu().item() * (1/(len(val_dataloader)))
+            loss_mean += total_loss.cpu().item() * (batch_size/(len(val_dataloader)))
     return loss_mean
 
 def train_loop(train_datasets: list[PairedDataset], val_datasets: list[PairedDataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, list[int], list[int], list[int]]:
@@ -101,6 +102,7 @@ def train_loop(train_datasets: list[PairedDataset], val_datasets: list[PairedDat
                     loss_gamma2,
                     color_loss_criterion,
                     l2_criterion,
+                    config["batch_size"],
                 )
 
                 val_loss_records.append(val_loss)
