@@ -22,14 +22,14 @@ def save_image(image: np.ndarray, image_name: str, save_dir: str) -> None:
     cv2.imwrite(save_path, image)
 
 
-def evaluate(dataloader: DataLoader, save_dir: "str", checkpoint_dir: str, save_images: SaveImageType = "sample") -> tuple[np.ndarray, np.ndarray]:
+def evaluate(dataloader: DataLoader, save_dir: "str", checkpoint_path: str, save_images: SaveImageType = "sample") -> tuple[np.ndarray, np.ndarray]:
     """
     Ensure all images have the same size
     """
     assert save_images in ["all", "sample", "no"], "save_images parameter must be one of all, sample, or no"
 
     # note: model is already in gpu
-    model = load_checkpoint(checkpoint_dir, True)  # True for GPU
+    model = load_checkpoint(checkpoint_path, True)  # True for GPU
     model.eval()
 
     psnr_output_batches: List[np.ndarray] = []
