@@ -210,7 +210,7 @@ def split_indices_randomely(
 def train_val_split(
     images: List[np.ndarray],
     train_ratio: float | None = None,
-) -> tuple[List[np.ndarray], List[str], List[np.ndarray], List[str]]:
+) -> tuple[List[np.ndarray], List[np.ndarray]]:
     """
     Split specified dataset into train and validation data, using specified indices.
     """
@@ -243,7 +243,7 @@ def train_val_split_paired(
     y_train_images = [y_images[i] for i in train_indices]
     x_validation_images = [x_images[i] for i in validation_indices]
     y_validation_images = [y_images[i] for i in validation_indices]
-    return (x_train_images, y_train_images, x_validation_images, y_validation_images)
+    return x_train_images, y_train_images, x_validation_images, y_validation_images
 
 
 def create_train_and_validation_paired_datasets(
@@ -306,12 +306,12 @@ def create_train_and_validation_unpaired_datasets(
 
     # creating training and validation datasets
     train_dataset = [
-        UnpairedDataset(noisy_train_images, clear_train_images, train_paired_transform)
+        UnpairedDataset(noisy_train_images, clear_train_images, train_unpaired_transform)
         for _ in range(num_datasets)
     ]
     validation_dataset = [
         UnpairedDataset(
-            noisy_validation_images, clear_validation_images, train_paired_transform
+            noisy_validation_images, clear_validation_images, train_unpaired_transform
         )
         for _ in range(num_datasets)
     ]
