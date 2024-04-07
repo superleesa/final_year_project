@@ -28,7 +28,6 @@ def evaluate(dataloader: DataLoader, save_dir: "str", checkpoint_path: str, save
     """
     assert save_images in ["all", "sample", "no"], "save_images parameter must be one of all, sample, or no"
 
-    # note: model is already in gpu
     model = load_checkpoint(checkpoint_path, True)  # True for GPU
     model.eval()
 
@@ -39,7 +38,7 @@ def evaluate(dataloader: DataLoader, save_dir: "str", checkpoint_path: str, save
         with torch.no_grad():
             sand_dust_images = sand_dust_images.cuda()
             denoised_images = model(sand_dust_images)
-            ground_truth_images = ground_truth_images.cuda()
+            ground_truth_images = torch.permute(ground_truth_images.cuda(), dims=[0, 2, 3, 1])
             denoised_images = postprocess_tensor(denoised_images)
 
             psnr_per_sample = metrics.psnr_per_sample(denoised_images, ground_truth_images).cpu().numpy()
