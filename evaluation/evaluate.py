@@ -47,7 +47,6 @@ def evaluate(dataloader: DataLoader, save_dir: "str", checkpoint_dir: str, save_
             psnr_output_batches.append(psnr_per_sample)
             ssim__output_batches.append(ssim_per_sample)
             
-
             if save_images == "all":
                 for denoised_image, image_name in zip(denoised_images, image_names):
                     save_image(denoised_image, image_name, save_dir)
