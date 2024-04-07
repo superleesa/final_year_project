@@ -39,7 +39,7 @@ def validate(dataloader: DataLoader, save_dir: "str", checkpoint_dir: str, save_
 
             ground_truth_images = ground_truth_images.cuda()
             mse_per_sample = metrics.mse_per_sample(denoised_images, ground_truth_images)
-            psnr_per_sample = metrics.psnr_per_sample(mse_per_sample).cpu().numpy()
+            psnr_per_sample = metrics.psnr_per_sample(denoised_images, ground_truth_images).cpu().numpy()
             ssim_per_sample = metrics.ssim_per_sample(denoised_images, ground_truth_images).cpu().numpy()
 
             psnr_output_batches.append(psnr_per_sample)

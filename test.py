@@ -15,9 +15,7 @@ def test_mse():
 def test_psnr():
     gt_tensor_1 = torch.tensor([[[0.8, 0.9], [1.0, 0.7]]])
     predicted_tensor_1 = torch.tensor([[[0.75, 0.88], [1.02, 0.68]]])
-    mse1 = metrics.mse_per_sample(predicted_tensor_1, gt_tensor_1)
-    print(mse1)
-    psnr_value_1 = metrics.psnr_per_sample(mse1)
+    psnr_value_1 = metrics.psnr_per_sample(predicted_tensor_1, gt_tensor_1)
     expected_result_1 = torch.tensor([30.45757491])
     assert torch.allclose(psnr_value_1, expected_result_1, atol=0.15), f"Test case 1 failed: PSNR value is incorrect: {psnr_value_1}"
 
