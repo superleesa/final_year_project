@@ -131,7 +131,7 @@ def validate_loop(
     return denoiser_loss_mean, discriminator_loss_mean
 
 
-def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[UnpairedDataset], checkpoint_path: str, save_dir: str) -> tuple[TOENet, tuple[list[int], list[int]], tuple[list[int], list[int]]]:
+def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[UnpairedDataset], checkpoint_path: str, save_dir: str) -> tuple[TOENet, tuple[list[float], list[float]], tuple[list[int], list[float], list[float]]]:
     assert len(train_datasets) == len(val_datasets)
 
     is_gpu = True

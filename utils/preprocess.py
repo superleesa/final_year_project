@@ -27,8 +27,8 @@ class PairedDataset(Dataset):
         ground_truth_images: List[np.ndarray],
         transformer: CoupledCompose | v2.Compose,
     ) -> None:
-        self.sand_dust_images = sand_dust_images
-        self.ground_truth_images = ground_truth_images
+        self.sand_dust_images = sand_dust_images.copy()
+        self.ground_truth_images = ground_truth_images.copy()
 
         self.transformer = transformer
 
@@ -68,8 +68,8 @@ class EvaluationDataset(Dataset):
         return len(self.sand_dust_images)
 
     def __getitem__(self, idx) -> Tuple[torch.Tensor, torch.Tensor, str]:
-        sand_dust_image = self.transformer(self.sand_dust_images[idx].copy())
-        ground_truth_image = self.transformer(self.ground_truth_images[idx].copy())
+        sand_dust_image = self.transformer(self.sand_dust_images[idx])
+        ground_truth_image = self.transformer(self.ground_truth_images[idx])
         return sand_dust_image, ground_truth_image, self.output_image_names[idx]
 
 
@@ -82,8 +82,14 @@ class UnpairedDataset:
         clear_images: List[np.ndarray],
         transformer: v2.Compose,
     ) -> None:
-        self.sand_dust_images = sand_dust_images
-        self.clear_images = clear_images
+        """
+        Each list of numpy images will be deepcopied.
+        :param sand_dust_images:
+        :param clear_images:
+        :param transformer:
+        """
+        self.sand_dust_images = sand_dust_images.copy()
+        self.clear_images = clear_images.copy()
 
         self.transformer = transformer
         # generate random pairs
@@ -209,7 +215,7 @@ def split_indices_randomely(
 
 def train_val_split(
     images: List[np.ndarray],
-    train_ratio: float | None = None,
+    train_ratio: float,
 ) -> tuple[List[np.ndarray], List[np.ndarray]]:
     """
     Split specified dataset into train and validation data, using specified indices.
@@ -228,7 +234,7 @@ def train_val_split(
 def train_val_split_paired(
     x_images: List[np.ndarray],
     y_images: List[np.ndarray],
-    train_ratio: float | None = None,
+    train_ratio: float,
 ) -> tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
     """
     Split specified dataset into train and validation data, using specified indices.
@@ -257,7 +263,9 @@ def create_train_and_validation_paired_datasets(
     noisy_dataset_path = os.path.join(dataset_dir, NOISY_IMAGE_DIR_NAME)
     gt_path = os.path.join(dataset_dir, GROUND_TRUTH_IMAGE_DIR_NAME)
     noisy_images, _ = load_dataset(noisy_dataset_path)
+    print(_)
     gt_images, _ = load_dataset(gt_path)
+    print(_)
 
     (
         noisy_train_images,
