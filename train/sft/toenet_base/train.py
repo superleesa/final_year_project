@@ -27,7 +27,6 @@ def validate_loop(
         loss_gamma2: float,
         color_loss_criterion: nn.CosineSimilarity,
         l2_criterion: nn.MSELoss,
-        batch_size: int
 ) -> float:
 
     model.eval()
@@ -37,12 +36,12 @@ def validate_loop(
         sand_storm_images, ground_truth_images = sand_storm_images.cuda(), ground_truth_images.cuda()
 
         with torch.no_grad():
+            batch_size = len(sand_storm_images)
             denoised_images = model(sand_storm_images)
             color_loss = get_color_loss(denoised_images, ground_truth_images, color_loss_criterion)
             l2 = l2_criterion(denoised_images, ground_truth_images)
             total_loss = loss_gamma1 * l2 + loss_gamma2 * color_loss
 
-            # FIXME: technically this is incorrect because the last batch might have a different size
             loss_mean += total_loss.cpu().item() * (batch_size/(len(val_dataloader)))
     return loss_mean
 
@@ -102,7 +101,6 @@ def train_loop(train_datasets: list[PairedDataset], val_datasets: list[PairedDat
                     loss_gamma2,
                     color_loss_criterion,
                     l2_criterion,
-                    config["batch_size"],
                 )
 
                 val_loss_records.append(val_loss)

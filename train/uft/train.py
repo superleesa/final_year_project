@@ -83,7 +83,6 @@ def validate_loop(
         discriminator_criterion: nn.BCELoss,
         clip_min: float | None,
         clip_max: float | None,
-        batch_size: int,
 ) -> tuple[float, float]:
 
     denoiser.eval()
@@ -97,6 +96,7 @@ def validate_loop(
 
         with torch.no_grad():
             # denoiser loss
+            batch_size = len(sand_dust_images)
             denoised_images = denoiser(sand_dust_images)
             denoised_images_predicted_labels = discriminator(
                 denoised_images
@@ -113,8 +113,7 @@ def validate_loop(
                 clip_max,
             )
 
-            # FIXME: technically this is incorrect because the last batch might have a different size
-            denoiser_loss_mean += denoiser_loss.cpu().item() * (1/(len(val_dataloader)))
+            denoiser_loss_mean += denoiser_loss.cpu().item() * (batch_size/(len(val_dataloader)))
 
 
             # discriminator loss
@@ -235,7 +234,6 @@ def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[Unpaire
                     discriminator_adversarial_criterion,
                     clip_min,
                     clip_max,
-                    config["batch_size"]
                 )
                 val_denoiser_loss_records.append(vaL_denoiser_loss)
                 val_discriminator_loss_records.append(val_discriminator_loss)
