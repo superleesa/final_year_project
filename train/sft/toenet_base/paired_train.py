@@ -5,13 +5,13 @@ from pathlib import Path
 import yaml
 
 import sys
+
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 print(sys.path)
 
 from utils.preprocess import create_train_and_validation_paired_datasets
 from train import train_loop
 from utils.utils import create_unique_save_dir, update_key_if_not_none
-
 
 
 def load_params_from_yml(config_path: str | Path) -> dict:
@@ -35,9 +35,9 @@ def load_params_from_yml(config_path: str | Path) -> dict:
 
 
 def paired_train_script(
-        images_dir: str | None = None,
-        checkpoint_path: str | None = None,
-        save_dir: str | None = None
+    images_dir: str | None = None,
+    checkpoint_path: str | None = None,
+    save_dir: str | None = None,
 ) -> None:
 
     # load params from yml file
@@ -53,23 +53,29 @@ def paired_train_script(
     save_dir = create_unique_save_dir(save_dir)
     update_key_if_not_none(params, "save_dir", save_dir)
 
-    train_datasets, val_datasets = create_train_and_validation_paired_datasets(images_dir, num_datasets=num_epochs, train_ratio=train_ratio)
+    train_datasets, val_datasets = create_train_and_validation_paired_datasets(
+        images_dir, num_datasets=num_epochs, train_ratio=train_ratio
+    )
 
     update_key_if_not_none(params, "checkpoint_path", checkpoint_path)
-    _, train_loss_records, val_loss_records, val_loss_computed_indices = train_loop(train_datasets, val_datasets, **params)  # Checkpoints will be saved inside `save_dir`
+    _, train_loss_records, val_loss_records, val_loss_computed_indices = train_loop(
+        train_datasets, val_datasets, **params
+    )  # Checkpoints will be saved inside `save_dir`
 
     # Save train_loss_records in csv
     df_train_loss = pd.DataFrame(
-        {"step_idx": pd.Series(range(len(train_loss_records))),
-         "loss": train_loss_records})
+        {
+            "step_idx": pd.Series(range(len(train_loss_records))),
+            "loss": train_loss_records,
+        }
+    )
     df_train_loss.to_csv(f"{save_dir}/train_loss_records.csv", index=False)
 
     # save val_loss_records in csv
     calc_eval_loss_interval: int = params["calc_eval_loss_interval"]
-    df_val_loss = pd.DataFrame({
-        "step_idx": val_loss_computed_indices,
-        "loss": val_loss_records
-    })
+    df_val_loss = pd.DataFrame(
+        {"step_idx": val_loss_computed_indices, "loss": val_loss_records}
+    )
     df_val_loss.to_csv(f"{save_dir}/val_loss_records.csv", index=False)
 
     # create matplotlib plot for loss curve
@@ -85,5 +91,3 @@ def paired_train_script(
 
 if __name__ == "__main__":
     Fire(paired_train_script)
-    
-    

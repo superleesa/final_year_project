@@ -7,6 +7,7 @@ import yaml
 from train import train_loop
 
 import sys
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from utils.preprocess import create_train_and_validation_unpaired_datasets
@@ -36,7 +37,11 @@ def load_params_from_yml(config_path: str | Path) -> dict:
     }
 
 
-def unpaired_train_script(images_dir: str | None = None, checkpoint_path: str | None = None, save_dir: str | None = None) -> None:
+def unpaired_train_script(
+    images_dir: str | None = None,
+    checkpoint_path: str | None = None,
+    save_dir: str | None = None,
+) -> None:
 
     # load params from yml file
     config_path = Path(__file__).parent / "config.yml"
@@ -51,30 +56,56 @@ def unpaired_train_script(images_dir: str | None = None, checkpoint_path: str | 
     save_dir = create_unique_save_dir(save_dir)
     update_key_if_not_none(params, "save_dir", save_dir)
 
-    train_datasets, val_datasets = create_train_and_validation_unpaired_datasets(images_dir, num_epochs, train_ratio=train_ratio)
+    train_datasets, val_datasets = create_train_and_validation_unpaired_datasets(
+        images_dir, num_epochs, train_ratio=train_ratio
+    )
 
     update_key_if_not_none(params, "checkpoint_path", checkpoint_path)
-    _, (denoiser_loss_records, discriminator_loss_records), (val_loss_computed_indices, val_denoiser_loss_records, val_discriminator_loss_records) = train_loop(train_datasets, val_datasets, **params)
-    
+    (
+        _,
+        (denoiser_loss_records, discriminator_loss_records),
+        (
+            val_loss_computed_indices,
+            val_denoiser_loss_records,
+            val_discriminator_loss_records,
+        ),
+    ) = train_loop(train_datasets, val_datasets, **params)
+
     # save loss_records in csv
-    df_train_unpaired_loss = pd.DataFrame({
-        "step_idx": pd.Series(range(0, len(denoiser_loss_records))),
-        "denoiser_loss": denoiser_loss_records,
-        "discriminator_loss": discriminator_loss_records,
-    })
-    df_train_unpaired_loss.to_csv(f"{save_dir}/unpaired_train_loss_records.csv", index=False)
+    df_train_unpaired_loss = pd.DataFrame(
+        {
+            "step_idx": pd.Series(range(0, len(denoiser_loss_records))),
+            "denoiser_loss": denoiser_loss_records,
+            "discriminator_loss": discriminator_loss_records,
+        }
+    )
+    df_train_unpaired_loss.to_csv(
+        f"{save_dir}/unpaired_train_loss_records.csv", index=False
+    )
 
     # save validation loss_records in csv
-    df_val_unpaired_loss = pd.DataFrame({
-        "step_idx": val_loss_computed_indices,
-        "denoiser_loss": val_denoiser_loss_records,
-        "discriminator_loss": val_discriminator_loss_records,
-    })
-    df_val_unpaired_loss.to_csv(f"{save_dir}/unpaired_val_loss_records.csv", index=False)
+    df_val_unpaired_loss = pd.DataFrame(
+        {
+            "step_idx": val_loss_computed_indices,
+            "denoiser_loss": val_denoiser_loss_records,
+            "discriminator_loss": val_discriminator_loss_records,
+        }
+    )
+    df_val_unpaired_loss.to_csv(
+        f"{save_dir}/unpaired_val_loss_records.csv", index=False
+    )
 
     # plot for denoiser loss
-    plt.plot(df_train_unpaired_loss["step_idx"], df_train_unpaired_loss["denoiser_loss"], label="train")
-    plt.plot(df_val_unpaired_loss["step_idx"], df_val_unpaired_loss["denoiser_loss"], label="validation")
+    plt.plot(
+        df_train_unpaired_loss["step_idx"],
+        df_train_unpaired_loss["denoiser_loss"],
+        label="train",
+    )
+    plt.plot(
+        df_val_unpaired_loss["step_idx"],
+        df_val_unpaired_loss["denoiser_loss"],
+        label="validation",
+    )
     plt.xlabel("Step")
     plt.ylabel("Loss")
     plt.title("Unpaired Image Training Denoiser Loss Curve")
@@ -83,8 +114,16 @@ def unpaired_train_script(images_dir: str | None = None, checkpoint_path: str | 
     plt.close()
 
     # plot for discriminator loss
-    plt.plot(df_train_unpaired_loss["step_idx"], df_train_unpaired_loss["discriminator_loss"], label="train")
-    plt.plot(df_val_unpaired_loss["step_idx"], df_val_unpaired_loss["discriminator_loss"], label="validation")
+    plt.plot(
+        df_train_unpaired_loss["step_idx"],
+        df_train_unpaired_loss["discriminator_loss"],
+        label="train",
+    )
+    plt.plot(
+        df_val_unpaired_loss["step_idx"],
+        df_val_unpaired_loss["discriminator_loss"],
+        label="validation",
+    )
     plt.xlabel("Step")
     plt.ylabel("Loss")
     plt.title("Unpaired Image Training Discriminator Loss Curve")

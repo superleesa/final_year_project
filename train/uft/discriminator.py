@@ -34,7 +34,7 @@ class Discriminator(nn.Module):
             nn.Conv2d(512, 1, 4, padding=0),  # Output size: (1, 9, 12)
             nn.Flatten(),
             nn.Linear(408, 1),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
     def forward(self, img):
