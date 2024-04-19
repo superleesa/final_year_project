@@ -131,44 +131,47 @@ def validate_loop(
     return denoiser_loss_mean, discriminator_loss_mean
 
 
-def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[UnpairedDataset], checkpoint_path: str, save_dir: str) -> tuple[TOENet, tuple[list[float], list[float]], tuple[list[int], list[float], list[float]]]:
+def train_loop(
+        train_datasets: list[UnpairedDataset],
+        val_datasets: list[UnpairedDataset],
+        checkpoint_path: str,
+        save_dir: str,
+        denoiser_adam_lr: float,
+        discriminator_adam_lr: float,
+        denoiser_loss_b1: float,
+        denoiser_loss_b2: float,
+        denoiser_adversarial_loss_clip_min: float | None,
+        denoiser_adversarial_loss_clip_max: float | None,
+        batch_size: int,
+        num_epochs: int,
+        print_loss_interval: int,
+        calc_eval_loss_interval: int,
+) -> tuple[TOENet, tuple[list[float], list[float]], tuple[list[int], list[float], list[float]]]:
     assert len(train_datasets) == len(val_datasets)
 
     is_gpu = True
     denoiser = load_checkpoint(checkpoint_path, is_gpu)  # base model already in gpu
     discriminator = Discriminator().cuda()
 
-    # load params from yml file
-    config_path = Path(__file__).parent / "config.yml"
-    with open(config_path) as ymlfile:
-        config = yaml.safe_load(ymlfile)
-
     # denoiser settings
     denoiser_optimizer = optim.Adam(
-        denoiser.parameters(), lr=config["denoiser_adam_lr"]
+        denoiser.parameters(), lr=denoiser_adam_lr
     )
     denoiser_adversarial_criterion = torch.nn.BCELoss()
-    clip_min: float | None = config.get("clip_min")
-    clip_max: float | None = config.get("clip_max")
-    denoiser_loss_b1: float = config["denoiser_loss_b1"]
-    denoiser_loss_b2: float = config["denoiser_loss_b2"]
 
     # discriminator settings
     discriminator_optimizer = optim.Adam(
-        discriminator.parameters(), lr=config["discriminator_adam_lr"]
+        discriminator.parameters(), lr=discriminator_adam_lr
     )
     discriminator_adversarial_criterion = torch.nn.BCELoss()
 
-    num_epochs: int = config["num_epochs"]
     denoiser_loss_records, discriminator_loss_records = [], []
     val_denoiser_loss_records, val_discriminator_loss_records = [], []
     val_loss_computed_indices = []
-    print_loss_interval: int = config["print_loss_interval"]
-    calc_eval_loss_interval: int = config["calc_eval_loss_interval"]
     global_step_counter = 0
 
     for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
-        dataloader: DataLoader = DataLoader(train_datasets[epoch_idx], batch_size=config["batch_size"], shuffle=True)
+        dataloader: DataLoader = DataLoader(train_datasets[epoch_idx], batch_size=batch_size, shuffle=True)
 
         for step_idx, (sand_dust_images, clear_images) in tqdm(enumerate(dataloader), desc="step"):
             denoiser.train()
@@ -191,8 +194,8 @@ def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[Unpaire
                 sand_dust_images,
                 denoised_images_predicted_labels,
                 denoiser_adversarial_criterion,
-                clip_min,
-                clip_max,
+                denoiser_adversarial_loss_clip_min,
+                denoiser_adversarial_loss_clip_max,
             )
             denoiser_loss.backward()
             denoiser_optimizer.step()
@@ -223,7 +226,7 @@ def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[Unpaire
                 print(f"Discriminator Loss at epoch={epoch_idx}&step={step_idx}", discriminator_loss_records[-1])
 
             if step_idx % calc_eval_loss_interval == 0:
-                val_dataloader = DataLoader(val_datasets[epoch_idx], batch_size=config["batch_size"])
+                val_dataloader = DataLoader(val_datasets[epoch_idx], batch_size=batch_size)
                 vaL_denoiser_loss, val_discriminator_loss = validate_loop(
                     denoiser,
                     discriminator,
@@ -232,8 +235,8 @@ def train_loop(train_datasets: list[UnpairedDataset], val_datasets: list[Unpaire
                     denoiser_loss_b2,
                     denoiser_adversarial_criterion,
                     discriminator_adversarial_criterion,
-                    clip_min,
-                    clip_max,
+                    denoiser_adversarial_loss_clip_min,
+                    denoiser_adversarial_loss_clip_max,
                 )
                 val_denoiser_loss_records.append(vaL_denoiser_loss)
                 val_discriminator_loss_records.append(val_discriminator_loss)

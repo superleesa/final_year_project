@@ -2,37 +2,61 @@ from fire import Fire
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
+import yaml
 
 from train import train_loop
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from utils.preprocess import create_unpaired_datasets, create_train_and_validation_unpaired_datasets
-from utils.utils import create_unique_save_dir
-from pathlib import Path
-import yaml
+from utils.preprocess import create_train_and_validation_unpaired_datasets
+from utils.utils import create_unique_save_dir, update_key_if_not_none
 
-# For unpaired images training in adversarial learning
-def unpaired_train_script(images_dir: str | None = None, checkpoint_dir: str | None = None, save_dir: str | None = None) -> None:
+
+def load_params_from_yml(config_path: str | Path) -> dict:
+
+    with open(config_path) as ymlfile:
+        config = yaml.safe_load(ymlfile)
+
+    return {
+        "checkpoint_path": config["checkpoint_path"],
+        "save_dir": config["save_dir"],
+        "images_dir": config["images_dir"],
+        "train_ratio": config.get("train_ratio"),
+        "denoiser_adam_lr": config["denoiser_adam_lr"],
+        "discriminator_adam_lr": config["discriminator_adam_lr"],
+        "denoiser_loss_b1": config["denoiser_loss_b1"],
+        "denoiser_loss_b2": config["denoiser_loss_b2"],
+        "batch_size": config["batch_size"],
+        "num_epochs": config["num_epochs"],
+        "print_loss_interval": config["print_loss_interval"],
+        "calc_eval_loss_interval": config["calc_eval_loss_interval"],
+        "denoiser_adversarial_loss_clip_min": config.get("clip_min"),
+        "denoiser_adversarial_loss_clip_max": config.get("clip_max"),
+    }
+
+
+def unpaired_train_script(images_dir: str | None = None, checkpoint_path: str | None = None, save_dir: str | None = None) -> None:
 
     # load params from yml file
     config_path = Path(__file__).parent / "config.yml"
-    with open(config_path) as ymlfile:
-        config = yaml.safe_load(ymlfile)
-    images_dir = images_dir or config["images_dir"]
-    checkpoint_dir = checkpoint_dir or config["checkpoint_dir"]
-    save_dir = save_dir or config["save_dir"]
-    num_epochs = config["num_epochs"]
-    train_ratio = config.get("train_ratio") or 0.8
+    params = load_params_from_yml(config_path)
 
+    images_dir_from_config = params.pop("images_dir")
+    images_dir = images_dir or images_dir_from_config
+    num_epochs = params["num_epochs"]
+    train_ratio = params.get("train_ratio") or 0.8
+
+    save_dir = save_dir or params["save_dir"]
     save_dir = create_unique_save_dir(save_dir)
+    update_key_if_not_none(params, "save_dir", save_dir)
+
     train_datasets, val_datasets = create_train_and_validation_unpaired_datasets(images_dir, num_epochs, train_ratio=train_ratio)
+
+    update_key_if_not_none(params, "checkpoint_path", checkpoint_path)
+    _, (denoiser_loss_records, discriminator_loss_records), (val_loss_computed_indices, val_denoiser_loss_records, val_discriminator_loss_records) = train_loop(train_datasets, val_datasets, **params)
     
-    # Train using adversarial learning approach
-    _, (denoiser_loss_records, discriminator_loss_records), (val_loss_computed_indices, val_denoiser_loss_records, val_discriminator_loss_records) = train_loop(train_datasets, val_datasets, checkpoint_dir, save_dir)
-    
-    # Save loss_records in csv
+    # save loss_records in csv
     df_train_unpaired_loss = pd.DataFrame({
         "step_idx": pd.Series(range(0, len(denoiser_loss_records))),
         "denoiser_loss": denoiser_loss_records,
@@ -40,7 +64,7 @@ def unpaired_train_script(images_dir: str | None = None, checkpoint_dir: str | N
     })
     df_train_unpaired_loss.to_csv(f"{save_dir}/unpaired_train_loss_records.csv", index=False)
 
-    # Save validation loss_records in csv
+    # save validation loss_records in csv
     df_val_unpaired_loss = pd.DataFrame({
         "step_idx": val_loss_computed_indices,
         "denoiser_loss": val_denoiser_loss_records,
