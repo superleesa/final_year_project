@@ -1,69 +1,80 @@
 import torch
 import torch.optim as optim
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 import torch.nn as nn
-import yaml
-import pickle as pkl
-from src.toenet.TOENet import TOENet
-from src.toenet.test import load_checkpoint
-import os
 from pathlib import Path
 from tqdm import tqdm
+from src.toenet.TOENet import TOENet
 
 import sys
+
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 from utils.preprocess import PairedDataset
+from utils.utils import load_checkpoint
 
 
-def get_color_loss(denoised_images: torch.Tensor, ground_truth_images: torch.Tensor, cos_sim_func: nn.CosineSimilarity):
+def get_color_loss(
+    denoised_images: torch.Tensor,
+    ground_truth_images: torch.Tensor,
+    cos_sim_func: nn.CosineSimilarity,
+):
     batch_size, _, height, width = denoised_images.size()
     one = torch.tensor(1).cuda()
     return one - cos_sim_func(denoised_images, ground_truth_images).mean()
 
+
 def validate_loop(
-        model: nn.Module,
-        val_dataloader: DataLoader,
-        loss_gamma1: float,
-        loss_gamma2: float,
-        color_loss_criterion: nn.CosineSimilarity,
-        l2_criterion: nn.MSELoss,
+    model: nn.Module,
+    val_dataloader: DataLoader,
+    loss_gamma1: float,
+    loss_gamma2: float,
+    color_loss_criterion: nn.CosineSimilarity,
+    l2_criterion: nn.MSELoss,
 ) -> float:
 
     model.eval()
     loss_mean = 0
 
-    for batch_idx, (sand_storm_images, ground_truth_images) in tqdm(enumerate(val_dataloader)):
-        sand_storm_images, ground_truth_images = sand_storm_images.cuda(), ground_truth_images.cuda()
+    for batch_idx, (sand_storm_images, ground_truth_images) in tqdm(
+        enumerate(val_dataloader)
+    ):
+        sand_storm_images, ground_truth_images = (
+            sand_storm_images.cuda(),
+            ground_truth_images.cuda(),
+        )
 
         with torch.no_grad():
             batch_size = len(sand_storm_images)
             denoised_images = model(sand_storm_images)
-            color_loss = get_color_loss(denoised_images, ground_truth_images, color_loss_criterion)
+            color_loss = get_color_loss(
+                denoised_images, ground_truth_images, color_loss_criterion
+            )
             l2 = l2_criterion(denoised_images, ground_truth_images)
             total_loss = loss_gamma1 * l2 + loss_gamma2 * color_loss
 
-            loss_mean += total_loss.cpu().item() * (batch_size/(len(val_dataloader)))
+            loss_mean += total_loss.cpu().item() * (batch_size / (len(val_dataloader)))
     return loss_mean
 
-def train_loop(train_datasets: list[PairedDataset], val_datasets: list[PairedDataset], checkpoint_dir: str, save_dir: str) -> tuple[TOENet, list[int], list[int], list[int]]:
-    is_gpu = 1
 
-    model, _, _ = load_checkpoint(checkpoint_dir, is_gpu)
-    color_loss_criterion = nn.CosineSimilarity(dim=1) # color channel
-    l2_criterion= nn.MSELoss()
+def train_loop(
+    train_datasets: list[PairedDataset],
+    val_datasets: list[PairedDataset],
+    checkpoint_path: str,
+    save_dir: str,
+    adam_lr: float,
+    loss_gamma1: float,
+    loss_gamma2: float,
+    batch_size: int,
+    num_epochs: int,
+    print_loss_interval: int,
+    calc_eval_loss_interval: int,
+) -> tuple[TOENet, list[int], list[int], list[int]]:
+    model = load_checkpoint(checkpoint_path, is_gpu=True)
+    color_loss_criterion = nn.CosineSimilarity(dim=1)  # color channel
+    l2_criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=adam_lr)
 
-    # load params from yml file
-    config_path = Path(__file__).parent / "config.yml"
-    with open(config_path) as ymlfile:
-        config = yaml.safe_load(ymlfile)
-
-    optimizer = optim.Adam(model.parameters(), lr=config["adam_lr"])
-    loss_gamma1 = config["loss_gamma1"]
-    loss_gamma2 = config["loss_gamma2"]
-    num_epochs = config["num_epochs"]
-
-    print_loss_interval = config.get("print_loss_interval") or 100
-    calc_eval_loss_interval = config["calc_eval_loss_interval"]
+    print_loss_interval = print_loss_interval or 100
 
     loss_records = []
     val_loss_records = []
@@ -72,8 +83,12 @@ def train_loop(train_datasets: list[PairedDataset], val_datasets: list[PairedDat
     global_step_counter = 0
 
     for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
-        dataloader: DataLoader = DataLoader(train_datasets[epoch_idx], batch_size=config["batch_size"], shuffle=True)
-        for step_idx, (sand_storm_images, ground_truth_images) in tqdm(enumerate(dataloader), desc="step"):
+        dataloader: DataLoader = DataLoader(
+            train_datasets[epoch_idx], batch_size=batch_size, shuffle=True
+        )
+        for step_idx, (sand_storm_images, ground_truth_images) in tqdm(
+            enumerate(dataloader), desc="step"
+        ):
             model.train()
 
             sand_storm_images = sand_storm_images.cuda()
@@ -81,19 +96,23 @@ def train_loop(train_datasets: list[PairedDataset], val_datasets: list[PairedDat
 
             optimizer.zero_grad()
             denoised_images = model(sand_storm_images)
-            color_loss = get_color_loss(denoised_images, ground_truth_images, color_loss_criterion)
+            color_loss = get_color_loss(
+                denoised_images, ground_truth_images, color_loss_criterion
+            )
             l2 = l2_criterion(denoised_images, ground_truth_images)
-            total_loss = loss_gamma1*l2 + loss_gamma2*color_loss
+            total_loss = loss_gamma1 * l2 + loss_gamma2 * color_loss
             loss_records.append(total_loss.cpu().item())
             total_loss.backward()
             optimizer.step()
-            
+
             if step_idx % print_loss_interval == 0:
                 print("Training Loss")
                 print(f"step {epoch_idx}&{step_idx}", total_loss.item())
 
             if step_idx % calc_eval_loss_interval == 0:
-                val_dataloader = DataLoader(val_datasets[epoch_idx], batch_size=config["batch_size"])
+                val_dataloader = DataLoader(
+                    val_datasets[epoch_idx], batch_size=batch_size
+                )
                 val_loss = validate_loop(
                     model,
                     val_dataloader,
