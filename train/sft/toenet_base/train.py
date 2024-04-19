@@ -1,18 +1,15 @@
 import torch
 import torch.optim as optim
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 import torch.nn as nn
-import yaml
-import pickle as pkl
-from src.toenet.TOENet import TOENet
-from src.toenet.test import load_checkpoint
-import os
 from pathlib import Path
 from tqdm import tqdm
+from src.toenet.TOENet import TOENet
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 from utils.preprocess import PairedDataset
+from utils.utils import load_checkpoint
 
 
 def get_color_loss(denoised_images: torch.Tensor, ground_truth_images: torch.Tensor, cos_sim_func: nn.CosineSimilarity):
@@ -48,7 +45,7 @@ def validate_loop(
 def train_loop(
         train_datasets: list[PairedDataset],
         val_datasets: list[PairedDataset],
-        checkpoint_dir: str,
+        checkpoint_path: str,
         save_dir: str,
         adam_lr: float,
         loss_gamma1: float,
@@ -58,9 +55,7 @@ def train_loop(
         print_loss_interval: int,
         calc_eval_loss_interval: int
 ) -> tuple[TOENet, list[int], list[int], list[int]]:
-    is_gpu = 1
-
-    model, _, _ = load_checkpoint(checkpoint_dir, is_gpu)
+    model = load_checkpoint(checkpoint_path, is_gpu=True)
     color_loss_criterion = nn.CosineSimilarity(dim=1) # color channel
     l2_criterion= nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=adam_lr)
