@@ -4,19 +4,32 @@
 <head>
     <meta charset="UTF-8">
     <title>Power-Denoise</title>
+    <link href='https://fonts.googleapis.com/css?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="styles.css" />
-
 </head>
 
 <body>
-    <h1>Power-Denoise</h1>
-    <p>Upload an image and click the "Denoise" button to remove noise from the image.</p>
-    <div id="form-wrapper">
-        <form id="image-form" enctype="multipart/form-data">
-            <input type="file" id="image-input" name="image" accept="image/*" required>
-            <button type="submit">Denoise</button>
-            <div id="image-container" style="margin-top: 15px;"></div>
-        </form>
+    <div class="main">
+        <div class="main-container">
+            <div class="main-content">
+                <h1 id="Power">Power</h1>
+                <h1 id="Denoise">Denoise</h1>
+                <p>Upload a sandstorm image below and click the "Denoise" button to remove color cast from the sandstorm image.</p>
+                <div id="form-wrapper">
+                    <form id="image-form" enctype="multipart/form-data">
+                        <input type="file" id="image-input" name="image" accept="image/*" required>
+                        <label for="image-input"><i class=" fa fa-solid fa-upload"></i> Upload here</label>
+                        <button type="submit" class="denoise_button">Denoise</button>
+                        <div id="image-container" style="margin-top: 15px;">
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="main-img--container">
+                <img id="main-img" src="icon.png" />
+            </div>
+        </div>
     </div>
 
     <script>
