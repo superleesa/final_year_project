@@ -73,7 +73,7 @@ class RandomResizeCropTransform:
 
 
 train_unpaired_transform = v2.Compose([
-    v2.ToTensor(),
+    v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]),
     RandomResizeCropTransform(),
     v2.RandomHorizontalFlip(),
     v2.RandomVerticalFlip(),
@@ -87,6 +87,6 @@ train_paired_transform = CoupledCompose([
 ])
 
 eval_transform = v2.Compose([
-    v2.ToTensor(),
+    v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]),
     v2.Resize((H_THRESHOLD, W_THRESHOLD)),
 ])
