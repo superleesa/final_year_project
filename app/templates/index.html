@@ -20,17 +20,24 @@
                     <form id="image-form" enctype="multipart/form-data">
                         <input type="file" id="image-input" name="image" accept="image/*" required>
                         <label for="image-input"><i class=" fa fa-solid fa-upload"></i> Upload here</label>
-                        <button type="submit" class="denoise_button">Denoise</button>
-                        <div id="image-container" style="margin-top: 15px;">
-                        </div>
+                        <button type="button" class="denoise_button">Denoise</button>
                     </form>
                 </div>
             </div>
-            <div class="main-img--container">
+            <div class="main-img-container">
                 <img id="main-img" src="{{url_for('static',filename='icon.png')}}" />
+            </div>
+            <div class="row">
+                <div class="img-container" id="original-image-container">
+                    <img src="{{url_for('static',filename='icon.png')}}" width="100%" ;>
+                </div>
+
+                <div class="img-container" id="result-image-container"></div>
+
             </div>
         </div>
     </div>
+
 
     <script>
         document.getElementById('image-form').addEventListener('submit', function(event) {
@@ -62,8 +69,8 @@
                     image.src = imageUrl;
 
                     // Append the image to a container in the DOM
-                    document.getElementById('image-container').innerHTML = ''; // Clear previous image
-                    document.getElementById('image-container').appendChild(image);
+                    document.getElementById('result-image-container').innerHTML = ''; // Clear previous image
+                    document.getElementById('result-image-container').appendChild(image);
                 })
                 .catch(error => {
                     console.error('Error fetching image:', error);

@@ -17,7 +17,7 @@ body {
 
 .main-container {
     display: grid;
-    grid-template-columns: 2fr 4fr;
+    grid-template-columns: 2fr 2fr;
     align-items: center;
     justify-self: center;
     margin: 0 auto;
@@ -25,10 +25,10 @@ body {
     background-color: #131313;
     z-index: 1;
     width: 100%;
-    max-width: 1300px;
-    padding-right: 30px;
-    padding-left: 200px;
-    padding-top: 60px;
+    max-width: 1200px;
+    padding-right: 70px;
+    padding-left: 100px;
+    padding-top: 80px;
 }
 
 .main-content {
@@ -61,9 +61,10 @@ body {
 }
 
 .main-content p {
-    grid-template-columns: 2fr 4fr;
+    grid-template-columns: 2fr 2fr;
     color: white;
     font-weight: 200;
+    margin-right: 120px;
     margin-top: 2rem;
     font-size: 1rem;
     text-align: justify;
@@ -84,7 +85,7 @@ form {
 
 #image-input {
     margin: 0;
-    padding: 10px;
+    padding-top: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
     display: none;
@@ -112,9 +113,11 @@ label i {
     margin-top: 0;
     margin-right: 20px;
     font-size: 16px;
+    min-width: max-content;
 }
 
 button {
+    min-width: max-content;
     font-size: 17px;
     padding: 14px 30px;
     background-color: #b8b9ff;
@@ -124,6 +127,7 @@ button {
     margin-top: 2rem;
     cursor: pointer;
     position: relative;
+    min-width: max-content;
     transition: all 0.35s;
     outline: none;
     font-weight: 600;
@@ -140,18 +144,40 @@ h2 {
     text-align: center;
 }
 
-.main-img--container {
+.main-img-container {
     text-align: center;
 }
 
 #main-img {
-    margin-left: 30px;
-    height: 85%;
-    width: 85%;
+    margin-left: 0px;
+    height: 150%;
+    width: 150%;
+    padding-right: 70px;
 }
 
-img {
-    display: block;
-    margin: 0 auto;
-    size: 10cm;
+.row {
+    margin-top: 0px;
+    display: flex;
+    /* Use flexbox to arrange items in a row */
+    justify-content: space-between;
+    /* Space items evenly along the row */
+    align-items: flex-start;
+    /* Align items at the top of the row */
+}
+
+.img-container {
+    width: 300px;
+    padding: 10px;
+    box-sizing: border-box;
+    align-items: center;
+    text-align: center;
+    height: 400px;
+    /* Set a fixed height for the container */
+    overflow: hidden;
+    /* Hide any content that overflows the container */
+}
+
+.img-container img {
+    max-width: 100%;
+    height: auto;
 }
