@@ -2,19 +2,21 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def save_loss_records_in_csv(
-    step_idx: pd.Series[int],
-    loss_records: pd.Series[float],
-    loss_label: str,
+def save_denoiser_and_discriminator_loss_records_in_csv(
+    step_idx: list[int],
+    denoiser_loss_records: list[float],
+    discriminator_loss_records: list[float],
     save_dir: str,
 ) -> None:
+
     df_train_loss = pd.DataFrame(
         {
             "step_idx": step_idx,
-            f"{loss_label}_loss": loss_records,
+            "denoiser_loss": denoiser_loss_records,
+            "dicriminator_loss": discriminator_loss_records
         }
     )
-    df_train_loss.to_csv(f"{save_dir}/{loss_label}_loss_records.csv", index=False)
+    df_train_loss.to_csv(f"{save_dir}/loss_records.csv", index=False)
 
 
 def plot_train_and_val_loss_curves(
