@@ -14,7 +14,7 @@ from utils.preprocess import create_train_and_validation_unpaired_datasets
 from utils.utils import create_unique_save_dir, update_key_if_not_none
 
 
-def load_params_from_yml(config_path: str | Path) -> dict:
+def load_uft_params_from_yml(config_path: str | Path) -> dict:
 
     with open(config_path) as ymlfile:
         config = yaml.safe_load(ymlfile)
@@ -45,7 +45,7 @@ def unpaired_train_script(
 
     # load params from yml file
     config_path = Path(__file__).parent / "config.yml"
-    params = load_params_from_yml(config_path)
+    params = load_uft_params_from_yml(config_path)
 
     images_dir_from_config = params.pop("images_dir")
     images_dir = images_dir or images_dir_from_config
