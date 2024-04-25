@@ -16,11 +16,10 @@ from utils.eval_plots import (
     plot_and_save_metrics,
     plot_and_save_metric_distribution,
     calc_and_save_average_metrics,
-    plot_and_save_loss_curve_for_multiple_runs,
-    save_average_metrics_for_runs,
-    plot_and_save_average_metric_barplot_for_multiple_runs,
+    save_aggregated_data,
 )
-from utils.utils import create_unique_save_dir, update_key_if_not_none
+from utils.utils import create_unique_save_dir, update_key_if_new_value_is_not_none, create_dir_with_hyperparam_name
+from utils.train_plots import save_denoiser_and_discriminator_loss_records_in_csv, plot_train_and_val_loss_curves
 
 
 DENOISER_LOSS_B1_OPTIONS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -82,7 +81,7 @@ def tune_loss_factor(
             images_dir, num_epochs, train_ratio=train_ratio
         )
 
-        update_key_if_not_none(params, "checkpoint_path", checkpoint_path)
+        update_key_if_new_value_is_not_none(params, "checkpoint_path", checkpoint_path)
         (
             _,
             (denoiser_loss_records, discriminator_loss_records),
@@ -92,12 +91,30 @@ def tune_loss_factor(
                 val_discriminator_loss_records,
             ),
         ) = train_loop(train_datasets, val_datasets, **params)
-        all_runs_discriminator_loss_records.append(discriminator_loss_records)
-        all_runs_denoiser_loss_records.append(denoiser_loss_records)
+        all_runs_discriminator_loss_records.append(val_denoiser_loss_records)
+        all_runs_denoiser_loss_records.append(val_discriminator_loss_records)
 
-        # save loss curve for this run
+        # save train and val loss values for this run
+        save_denoiser_and_discriminator_loss_records_in_csv(list(range(0, len(denoiser_loss_records))), denoiser_loss_records, discriminator_loss_records, params['save_dir'])
+        save_denoiser_and_discriminator_loss_records_in_csv(val_loss_computed_indices, val_denoiser_loss_records, val_discriminator_loss_records, params['save_dir'])
 
-
+        # save denoiser and discriminator loss curves
+        plot_train_and_val_loss_curves(
+            list(range(0, len(denoiser_loss_records))),
+            val_loss_computed_indices,
+            denoiser_loss_records,
+            val_denoiser_loss_records,
+            "Unpaired Image Training Denoiser Loss Curve",
+            params['save_dir']
+        )
+        plot_train_and_val_loss_curves(
+            list(range(0, len(discriminator_loss_records))),
+            val_loss_computed_indices,
+            discriminator_loss_records,
+            val_discriminator_loss_records,
+            "Unpaired Image Training Discriminator Loss Curve",
+            params['save_dir']
+        )
 
         # evaluation
         dataset = create_evaluation_dataset(images_dir)
@@ -105,9 +122,14 @@ def tune_loss_factor(
         psnr_per_sample, ssim_per_sample = evaluate(
             dataloader, save_dir, checkpoint_path, save_images=params["save_images_type"]
         )
+        # todo: there should be a function that only handles creation of metrics dataframe
+        # the function below current save created plot and return df
         df_metric = plot_and_save_metrics(
-            {"psnr": psnr_per_sample, "ssim": ssim_per_sample}, save_dir
+            {"psnr": psnr_per_sample, "ssim": ssim_per_sample}, params["save_dir"]
         )
+        plot_and_save_metric_distribution(df_metric["psnr"], "PSNR", params["save_dir"])
+        plot_and_save_metric_distribution(df_metric["ssim"], "SSIM", params["save_dir"])
+        calc_and_save_average_metrics(df_metric["psnr"], df_metric["ssim"], params["save_dir"])
         all_runs_avg_psnr_records.append(df_metric["psnr"].mean().item())
         all_runs_avg_ssim_records.append(df_metric["ssim"].mean().item())
 
@@ -118,37 +140,3 @@ def tune_loss_factor(
         all_runs_avg_ssim_records,
         os.path.join(base_save_dir, "aggregated_results"),
     )
-
-
-def save_aggregated_data(
-        all_runs_discriminator_loss_records: list[pd.Series[float]],
-        all_runs_denoiser_loss_records: list[pd.Series[float]],
-        all_runs_avg_psnr_records: list[float],
-        all_runs_avg_ssim_records: list[float],
-        save_dir: str
-    ) -> None:
-    run_names = [
-        f"(b1={denoiser_loss_b1} & b2={denoiser_loss_b2})"
-        for denoiser_loss_b1, denoiser_loss_b2 in zip(DENOISER_LOSS_B1_OPTIONS, DENOISER_LOSS_B2_OPTIONS)
-    ]
-
-    plot_and_save_loss_curve_for_multiple_runs(
-        all_runs_discriminator_loss_records, run_names, "denoiser", save_dir
-    )
-    plot_and_save_loss_curve_for_multiple_runs(
-        all_runs_denoiser_loss_records, run_names, "discriminator", save_dir
-    )
-    plot_and_save_average_metric_barplot_for_multiple_runs(
-        all_runs_avg_psnr_records, run_names, "PSNR", save_dir
-    )
-    plot_and_save_average_metric_barplot_for_multiple_runs(
-        all_runs_avg_ssim_records, run_names, "SSIM", save_dir
-    )
-
-
-def create_dir_with_hyperparam_name(base_save_dir: str, denoiser_loss_b1: float, denoiser_loss_b2: float) -> str:
-    folder_name = f"b1={denoiser_loss_b1}_b2={denoiser_loss_b2}"
-    path = Path(base_save_dir) / folder_name
-    path.mkdir(parents=True, exist_ok=True)
-    return str(path)
-
