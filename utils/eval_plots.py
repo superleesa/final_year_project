@@ -70,3 +70,29 @@ def plot_and_save_average_metric_barplot_for_multiple_runs(
     plt.title(f"Average {metric_name} for each test")
     plt.savefig(f"{save_dir}/avg_{metric_name}_comparison.png")
     plt.close()
+
+
+def save_aggregated_data(
+        all_runs_discriminator_loss_records: list[list[float]],
+        all_runs_denoiser_loss_records: list[list[float]],
+        all_runs_avg_psnr_records: list[float],
+        all_runs_avg_ssim_records: list[float],
+        save_dir: str
+    ) -> None:
+    run_names = [
+        f"(b1={denoiser_loss_b1} & b2={denoiser_loss_b2})"
+        for denoiser_loss_b1, denoiser_loss_b2 in zip(DENOISER_LOSS_B1_OPTIONS, DENOISER_LOSS_B2_OPTIONS)
+    ]
+
+    plot_and_save_loss_curve_for_multiple_runs(
+        all_runs_discriminator_loss_records, run_names, "denoiser", save_dir
+    )
+    plot_and_save_loss_curve_for_multiple_runs(
+        all_runs_denoiser_loss_records, run_names, "discriminator", save_dir
+    )
+    plot_and_save_average_metric_barplot_for_multiple_runs(
+        all_runs_avg_psnr_records, run_names, "PSNR", save_dir
+    )
+    plot_and_save_average_metric_barplot_for_multiple_runs(
+        all_runs_avg_ssim_records, run_names, "SSIM", save_dir
+    )
