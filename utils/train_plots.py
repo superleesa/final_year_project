@@ -20,8 +20,8 @@ def save_denoiser_and_discriminator_loss_records_in_csv(
 
 
 def plot_train_and_val_loss_curves(
-    train_step_idx: int,
-    val_step_idx: int,
+    train_step_idx: list[int],
+    val_step_idx: list[int],
     train_loss_records: list[float],
     val_loss_records: list[float],
     plot_title: str,

@@ -39,7 +39,7 @@ def calc_and_save_average_metrics(
 
 
 def plot_and_save_loss_curve_for_multiple_runs(
-    loss_for_each_run: list[pd.Series[float]],
+    loss_for_each_run: list[list[float]],
     test_labels: list[str],
     target_model_name: str,
     save_dir: str,
