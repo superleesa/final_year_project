@@ -73,15 +73,17 @@ def plot_and_save_average_metric_barplot_for_multiple_runs(
 
 
 def save_aggregated_data(
-        all_runs_discriminator_loss_records: list[list[float]],
-        all_runs_denoiser_loss_records: list[list[float]],
-        all_runs_avg_psnr_records: list[float],
-        all_runs_avg_ssim_records: list[float],
-        save_dir: str
-    ) -> None:
+    all_runs_discriminator_loss_records: list[list[float]],
+    all_runs_denoiser_loss_records: list[list[float]],
+    all_runs_avg_psnr_records: list[float],
+    all_runs_avg_ssim_records: list[float],
+    save_dir: str,
+) -> None:
     run_names = [
         f"(b1={denoiser_loss_b1} & b2={denoiser_loss_b2})"
-        for denoiser_loss_b1, denoiser_loss_b2 in zip(DENOISER_LOSS_B1_OPTIONS, DENOISER_LOSS_B2_OPTIONS)
+        for denoiser_loss_b1, denoiser_loss_b2 in zip(
+            DENOISER_LOSS_B1_OPTIONS, DENOISER_LOSS_B2_OPTIONS
+        )
     ]
 
     plot_and_save_loss_curve_for_multiple_runs(

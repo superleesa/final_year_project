@@ -13,7 +13,7 @@ def save_denoiser_and_discriminator_loss_records_in_csv(
         {
             "step_idx": step_idx,
             "denoiser_loss": denoiser_loss_records,
-            "dicriminator_loss": discriminator_loss_records
+            "dicriminator_loss": discriminator_loss_records,
         }
     )
     df_train_loss.to_csv(f"{save_dir}/loss_records.csv", index=False)
