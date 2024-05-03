@@ -7,17 +7,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Whitehole(nn.Module):
+class DehazeGAN(nn.Module):
 	def __init__(self, channel):
-		super(Whitehole, self).__init__()
+		super(DehazeGAN, self).__init__()
         
-		self.encoder_large = WhiteholeBlock(channel)
-		self.encoder_medium = WhiteholeBlock(channel*2)
-		self.encoder_small = WhiteholeBlock(channel*4)
+		self.encoder_large = DehazeGan(channel)
+		self.encoder_medium = DehazeGan(channel*2)
+		self.encoder_small = DehazeGan(channel*4)
 		
-		self.decoder_small = WhiteholeBlock(channel*4)
-		self.decoder_medium = WhiteholeBlock(channel*2)
-		self.decoder_large = WhiteholeBlock(channel)
+		self.decoder_small = DehazeGan(channel*4)
+		self.decoder_medium = DehazeGan(channel*2)
+		self.decoder_large = DehazeGan(channel)
         
 		self.conv_eltem = nn.Conv2d(channel,2*channel,kernel_size=1,stride=1,padding=0,bias=False)   
 		self.conv_emtes = nn.Conv2d(2*channel,4*channel,kernel_size=1,stride=1,padding=0,bias=False)
@@ -55,7 +55,7 @@ class Whitehole(nn.Module):
 		return x_out
 
 
-class WhiteholeBlock:
+class DehazeGan:
 	def __init__(self, conv_num_channels: int, emb_dim: int, num_heads: int) -> None:
 		self.brb = BRB(conv_num_channels)
 		self.color_attention = nn.MultiheadAttention(emb_dim, num_heads)
