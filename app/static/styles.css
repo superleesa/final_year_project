@@ -1,44 +1,35 @@
 * {
-    box-sizing: border-box;
     margin: 0;
     padding: 0;
     font-family: 'Poppins';
 }
 
 body {
-    width: 100%;
-    background-color: #141414;
-}
-
-.main {
-    width: 100%;
     background-color: #141414;
 }
 
 .main-container {
     display: grid;
-    grid-template-columns: 2fr 2fr;
-    align-items: center;
-    justify-self: center;
+    grid-template-columns: [col] 600px [col] 600px;
+    grid-template-rows: [rows] auto [rows] auto [rows] auto;
+    grid-gap: 50px;
     margin: 0 auto;
     height: 100%;
     background-color: #131313;
     z-index: 1;
     width: 100%;
     max-width: 1200px;
-    padding-right: 70px;
-    padding-left: 100px;
-    padding-top: 80px;
 }
 
 .main-content {
-    width: 100%;
+    grid-column: col / span 1;
+    grid-row: rows;
     background-color: #141414;
     font-family: 'Montserrat';
+    padding-top: 100px;
 }
 
 .main-content h1 {
-    grid-template-columns: 2fr 2fr;
     font-weight: 700;
     background-color: #ff8177;
     font-size: 5rem;
@@ -60,8 +51,23 @@ body {
     height: 100px;
 }
 
+h1 {
+    font-size: 25px;
+    font-weight: 600;
+    color: white;
+}
+
+.original-text {
+    grid-column: col 1 / span 1;
+    grid-row: rows 2;
+}
+
+.output-text {
+    grid-column: col 2 / span 1;
+    grid-row: rows 2;
+}
+
 .main-content p {
-    grid-template-columns: 2fr 2fr;
     color: white;
     font-weight: 200;
     margin-right: 120px;
@@ -86,8 +92,6 @@ form {
 #image-input {
     margin: 0;
     padding-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
     display: none;
 }
 
@@ -140,44 +144,38 @@ button:hover {
     color: white;
 }
 
-h2 {
-    text-align: center;
-}
-
-.main-img-container {
-    text-align: center;
-}
-
 #main-img {
     margin-left: 0px;
-    height: 150%;
-    width: 150%;
+    width: 600px;
     padding-right: 70px;
 }
 
-.row {
-    margin-top: 0px;
-    display: flex;
-    /* Use flexbox to arrange items in a row */
-    justify-content: space-between;
-    /* Space items evenly along the row */
-    align-items: flex-start;
-    /* Align items at the top of the row */
+.main-img-container {
+    grid-column: col 2/ span 1;
+    grid-row: rows;
 }
 
-.img-container {
-    width: 300px;
-    padding: 10px;
-    box-sizing: border-box;
-    align-items: center;
-    text-align: center;
-    height: 400px;
-    /* Set a fixed height for the container */
-    overflow: hidden;
-    /* Hide any content that overflows the container */
+.original-class {
+    grid-column: col 1 / span 1;
+    grid-row: rows 3;
 }
 
-.img-container img {
+.original-class img {
     max-width: 100%;
-    height: auto;
+    /* Resize the image to fit within the container width */
+    max-height: 100%;
+    /* Resize the image to fit within the container height */
+}
+
+.output-class {
+    grid-column: col 2/ span 1;
+    width: 600px;
+    grid-row: rows 3;
+}
+
+.output-class img {
+    max-width: 100%;
+    /* Resize the image to fit within the container width */
+    max-height: 100%;
+    /* Resize the image to fit within the container height */
 }
