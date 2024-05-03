@@ -5,7 +5,7 @@ import torch.nn as nn
 from pathlib import Path
 from tqdm import tqdm
 from src.toenet.TOENet import TOENet
-from train.early_stopping import EarlyStopping
+from train.early_stopping import SFTEarlyStopping
 
 import sys
 
@@ -77,13 +77,11 @@ def train_loop(
     optimizer = optim.Adam(model.parameters(), lr=adam_lr)
 
     print_loss_interval = print_loss_interval or 100
-    early_stopping = EarlyStopping(patience=early_stopping_patience)
+    early_stopping = SFTEarlyStopping(patience=early_stopping_patience)
 
     loss_records = []
     val_loss_records = []
     val_loss_computed_indices = []
-
-    global_step_counter = 0
 
     for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
         dataloader: DataLoader = DataLoader(
@@ -111,36 +109,30 @@ def train_loop(
             if step_idx % print_loss_interval == 0:
                 print("Training Loss")
                 print(f"step {epoch_idx}&{step_idx}", total_loss.item())
+            
 
-            if step_idx % calc_eval_loss_interval == 0:
-                val_dataloader = DataLoader(
-                    val_datasets[epoch_idx], batch_size=batch_size
-                )
-                val_loss = validate_loop(
-                    model,
-                    val_dataloader,
-                    loss_gamma1,
-                    loss_gamma2,
-                    color_loss_criterion,
-                    l2_criterion,
-                )
+        val_dataloader = DataLoader(
+            val_datasets[epoch_idx], batch_size=batch_size
+        )
+        val_loss = validate_loop(
+            model,
+            val_dataloader,
+            loss_gamma1,
+            loss_gamma2,
+            color_loss_criterion,
+            l2_criterion,
+        )
 
-                val_loss_records.append(val_loss)
-                val_loss_computed_indices.append(global_step_counter)
+        val_loss_records.append(val_loss)
+        val_loss_computed_indices.append(epoch_idx)
 
-                print("Validation Loss")
-                print(f"step {epoch_idx}&{step_idx}", val_loss)
+        print("Validation Loss")
+        print(f"step {epoch_idx}: ", val_loss)
 
-                early_stopping(val_loss)
-                if early_stopping.early_stop:
-                    print("Early stopping")
-                    break 
-
-            global_step_counter += 1
-
+        early_stopping(val_loss)
         if early_stopping.early_stop:
             print("Early stopping")
-            break 
+            break
 
     # save
     torch.save(model.state_dict(), f"{save_dir}/sft_toenet_on_sie.pth")
