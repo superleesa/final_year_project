@@ -31,6 +31,7 @@ def load_params_from_yml(config_path: str | Path) -> dict:
         "num_epochs": config["num_epochs"],
         "print_loss_interval": config["print_loss_interval"],
         "calc_eval_loss_interval": config["calc_eval_loss_interval"],
+        "early_stopping_patience": config["early_stopping_patience"]
     }
 
 

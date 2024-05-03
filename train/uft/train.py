@@ -14,7 +14,7 @@ import sys
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-
+from train.early_stopping import EarlyStopping
 from src.toenet.TOENet import TOENet
 from utils.utils import load_checkpoint
 from utils.preprocess import UnpairedDataset
@@ -149,6 +149,7 @@ def train_loop(
     num_epochs: int,
     print_loss_interval: int,
     calc_eval_loss_interval: int,
+    early_stopping_patience: int
 ) -> tuple[
     TOENet, tuple[list[float], list[float]], tuple[list[int], list[float], list[float]]
 ]:
@@ -157,6 +158,7 @@ def train_loop(
     is_gpu = True
     denoiser = load_checkpoint(checkpoint_path, is_gpu)  # base model already in gpu
     discriminator = Discriminator().cuda()
+    early_stopping = EarlyStopping(patience=early_stopping_patience)
 
     # denoiser settings
     denoiser_optimizer = optim.Adam(denoiser.parameters(), lr=denoiser_adam_lr)
@@ -266,6 +268,15 @@ def train_loop(
 
             torch.cuda.empty_cache()
             global_step_counter += 1
+
+            early_stopping(vaL_denoiser_loss)
+            if early_stopping.early_stop:
+                    print("Early stopping")
+                    break 
+
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break 
 
     # save
     torch.save(denoiser.state_dict(), f"{save_dir}/denoiser.pth")

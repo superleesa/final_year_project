@@ -8,6 +8,7 @@ print_loss_interval: 100
 calc_eval_loss_interval: 100
 denoiser_loss_b1: 0.5
 denoiser_loss_b2: 0.5
+early_stopping_patience: 5
 checkpoint_path: C:\Users\super\Documents\1.School\FYP\fyp_project\src\toenet\checkpoint\checkpoint.pth.tar
 images_dir: C:\Users\super\Documents\1.School\FYP\fyp_project\Data\input\unpaired
 save_dir: C:\Users\super\Documents\1.School\FYP\fyp_project\Data\output

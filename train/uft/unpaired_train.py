@@ -34,6 +34,7 @@ def load_params_from_yml(config_path: str | Path) -> dict:
         "calc_eval_loss_interval": config["calc_eval_loss_interval"],
         "denoiser_adversarial_loss_clip_min": config.get("clip_min"),
         "denoiser_adversarial_loss_clip_max": config.get("clip_max"),
+        "early_stopping_patience": config["early_stopping_patience"]
     }
 
 

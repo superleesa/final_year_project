@@ -7,6 +7,7 @@ adam_lr: 0.001
 calc_eval_loss_interval: 100
 batch_size: 4
 train_ratio: 0.8
+early_stopping_patience: 5
 checkpoint_dir: "/home/student/Documents/MDS12/sho/final_year_project/src/toenet/checkpoint/"
 images_dir: "/home/student/Documents/MDS12/sho/final_year_project/Data/Synthetic_images"
 save_dir: "/home/student/Documents/MDS12/sho/final_year_project/Data/output/base_toenet_on_sie"
