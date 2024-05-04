@@ -22,9 +22,13 @@ def restore_image():
     image_path = app.config["upload_folder"] / image_name
     if app.config["is_mock"]:
         # load a sample image
+        # without model
         return send_file(app.config["upload_folder"] /"138.jpg", mimetype='image/gif')
     else:
         # TODO: add caching
+        # with model
+        # model needs to be in checkpoint_dir
+        # requires further debugging
         model = load_model(app.config["checkpoint_dir"])
         denoised_filename = denoise_and_save_one(model, image_path)
         return send_file(denoised_filename, mimetype='image/gif')
