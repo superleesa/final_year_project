@@ -4,18 +4,67 @@
 <head>
     <meta charset="UTF-8">
     <title>Power-Denoise</title>
+    <link href='https://fonts.googleapis.com/css?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="{{url_for('static',filename='styles.css')}}" />
 </head>
 
 <body>
-    <h1>Power-Denoise</h1>
-    <p>Upload an image and click the "Denoise" button to remove noise from the image.</p>
-    <div id="form-wrapper">
-        <form id="image-form" enctype="multipart/form-data">
-            <input type="file" id="image-input" name="image" accept="image/*" required>
-            <button type="submit">Denoise</button>
-            <div id="image-container" style="margin-top: 15px;"></div>
-        </form>
+    <div class="main-container">
+        <div class="main-content">
+            <h1 id="Power">Power</h1>
+            <h1 id="Denoise">Denoise</h1>
+            <p>Upload a sandstorm image below and click the "Denoise" button to remove color cast from the sandstorm image.</p>
+            <div id="form-wrapper">
+                <form id="image-form" enctype="multipart/form-data">
+                    <input type="file" id="image-input" name="image" accept="image/*" required>
+                    <label for="image-input"><i class=" fa fa-solid fa-upload"></i> Upload here</label>
+                    <button type="submit" class="denoise_button">Denoise</button>
+                </form>
+            </div>
+        </div>
+        <div class="main-img-container">
+            <img id="main-img" src="{{url_for('static',filename='icon.png')}}" />
+        </div>
+        <div class="original-text">
+            <h1>Original</h1>
+        </div>
+        <div class="output-text">
+            <h1>Output</h1>
+        </div>
+        <div class="original-class" id='original'>
+
+            <script>
+                var input = document.getElementById('image-input');
+                input.addEventListener('change', function(event) {
+                    // Get the selected file from the input
+                    var file = event.target.files[0];
+
+                    // Create a FileReader object
+                    var reader = new FileReader();
+
+                    // Set up the FileReader to read the file as a data URL
+                    reader.readAsDataURL(file);
+
+                    // When the FileReader has loaded the file
+                    reader.onload = function() {
+                        // Create a new image element
+                        var img = document.createElement('img');
+
+                        // Set the src attribute of the image to the data URL
+                        img.src = reader.result;
+
+                        // Append the image to the output container
+                        var original = document.getElementById('original');
+                        original.innerHTML = ''; // Clear previous image
+                        original.appendChild(img);
+                    };
+                });
+            </script>
+        </div>
+        <div class="output-class" id="output"></div>
     </div>
+
 
     <script>
         document.getElementById('image-form').addEventListener('submit', function(event) {
@@ -47,8 +96,8 @@
                     image.src = imageUrl;
 
                     // Append the image to a container in the DOM
-                    document.getElementById('image-container').innerHTML = ''; // Clear previous image
-                    document.getElementById('image-container').appendChild(image);
+                    document.getElementById('output').innerHTML = ''; // Clear previous image
+                    document.getElementById('output').appendChild(image);
                 })
                 .catch(error => {
                     console.error('Error fetching image:', error);
@@ -56,62 +105,5 @@
         });
     </script>
 </body>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f8f9fa;
-    }
-    
-    h1 {
-        text-align: center;
-    }
-    
-    #form-wrapper {
-        display: flex;
-        justify-content: center;
-    }
-    
-    p {
-        text-align: center;
-    }
-    
-    form {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        margin: 20px 0;
-        width: 40%;
-    }
-    
-    input {
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-    
-    button {
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        background-color: #007bff;
-        color: #fff;
-        cursor: pointer;
-    }
-    
-    button:hover {
-        background-color: #0056b3;
-    }
-    
-    h2 {
-        text-align: center;
-    }
-    
-    img {
-        display: block;
-        margin: 0 auto;
-    }
-</style>
 
 </html>
