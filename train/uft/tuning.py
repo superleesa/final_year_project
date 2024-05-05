@@ -4,6 +4,7 @@ import sys
 import os
 import yaml
 import optuna
+from fire import Fire
 
 from train import train_loop
 
@@ -13,57 +14,51 @@ from utils.preprocess import (
     create_train_and_validation_unpaired_datasets,
     create_evaluation_dataset
 )
-# from utils.eval_plots import (
-#     plot_and_save_metrics,
-#     plot_and_save_metric_distribution,
-#     calc_and_save_average_metrics,
-#     save_aggregated_data,
-# )
+from utils.eval_plots import (
+    plot_and_save_metrics,
+    plot_and_save_metric_distribution,
+    calc_and_save_average_metrics,
+    save_aggregated_data,
+)
 from utils.utils import (
     create_unique_save_dir,
     update_key_if_new_value_is_not_none,
     create_dir_with_hyperparam_name,
 )
-# from utils.train_plots import (
-#     save_denoiser_and_discriminator_loss_records_in_csv,
-#     plot_train_and_val_loss_curves,
-# )
+from utils.train_plots import (
+    save_denoiser_and_discriminator_loss_records_in_csv,
+    plot_train_and_val_loss_curves,
+)
 
 
-DENOISER_LOSS_B1_OPTIONS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-DENOISER_LOSS_B2_OPTIONS = [1 - b1 for b1 in DENOISER_LOSS_B1_OPTIONS]
-
-
-all_runs_discriminator_loss_records = []
-all_runs_denoiser_loss_records = []
-all_runs_avg_psnr_records = []
-all_runs_avg_ssim_records = []
-
-
-def load_uft_params_from_yml(config_path: str | Path) -> dict:
+def load_directory_from_yml(config_path: str | Path) -> dict:
 
     with open(config_path) as ymlfile:
         config = yaml.safe_load(ymlfile)
 
     return {
-        "checkpoint_path": config["checkpoint_path"],
-        "save_dir": config["save_dir"],
-        "images_dir": config["images_dir"],
-        "train_ratio": config.get("train_ratio"),
-        "denoiser_adam_lr": config["denoiser_adam_lr"],
-        "discriminator_adam_lr": config["discriminator_adam_lr"],
-        "denoiser_loss_b1": config["denoiser_loss_b1"],
-        "denoiser_loss_b2": config["denoiser_loss_b2"],
-        "batch_size": config["batch_size"],
-        "num_epochs": config["num_epochs"],
-        "print_loss_interval": config["print_loss_interval"],
-        "calc_eval_loss_interval": config["calc_eval_loss_interval"],
-        "denoiser_adversarial_loss_clip_min": config.get("clip_min"),
-        "denoiser_adversarial_loss_clip_max": config.get("clip_max"),
-        "save_images_type": config.get("save_images_type") or "all",
         "checkpoint_path": config.get("checkpoint_path"),
         "images_dir": config.get("images_dir"),
-        "save_dir": config.get("save_dir")
+        "save_dir": config.get("save_dir"),
+        "eval_dir": config.get("eval_dir")
+    }
+
+def load_best_params_from_yml(best_params_path: str | Path) -> dict:
+
+    with open(best_params_path) as ymlfile:
+        best_params = yaml.safe_load(ymlfile)
+
+    return {
+        "batch_size": best_params.get("batch_size"),
+        "num_epochs": best_params.get("num_epochs"),
+        "denoiser_adam_lr": best_params.get("denoiser_adam_lr"),
+        "discriminator_adam_lr": best_params.get("discriminator_adam_lr"),
+        "denoiser_loss_b1": best_params.get("denoiser_loss_b1"),
+        "denoiser_loss_b2": best_params.get("denoiser_loss_b2"),
+        "print_loss_interval": best_params.get("print_loss_interval"),
+        "denoiser_adversarial_loss_clip_min": best_params.get("denoiser_adversarial_loss_clip_min"),
+        "denoiser_adversarial_loss_clip_max": best_params.get("denoiser_adversarial_loss_clip_max"),
+        "calc_eval_loss_interval": best_params.get("calc_eval_loss_interval")
     }
 
 def get_params(trial):
@@ -82,14 +77,14 @@ def get_params(trial):
     return params
 
 def objective (trial):
-    images_dir_from_config = r"/home/student/Documents/mds12/winnie/final_year_project/Data/unpaired"
-    images_dir =  images_dir_from_config
+    config_path = Path(__file__).parent / "config.yml"
+    images_dir =  load_directory_from_yml(config_path)["images_dir"]
     num_epochs = trial.suggest_int('num_epochs', 5, 15)
     batch_size = trial.suggest_int('batch_size', 4, 24, step = 4)
     train_ratio = 0.7
-    checkpoint_path = r"/home/student/Documents/mds12/winnie/final_year_project/src/toenet/checkpoint/checkpoint.pth.tar"
+    checkpoint_path = load_directory_from_yml(config_path)["checkpoint_path"]
 
-    save_dir = r"/home/student/Documents/mds12/winnie/final_year_project/Data/output"
+    save_dir = load_directory_from_yml(config_path)["save_dir"]
     save_dir = create_unique_save_dir(save_dir)
 
     current_run_save_dir = create_dir_with_hyperparam_name(
@@ -114,11 +109,7 @@ def objective (trial):
         ),
     )= train_loop(train_datasets, val_datasets, checkpoint_path, param_save_dir, batch_size, num_epochs, **get_params(trial))
 
-    # Calculate the average validation loss for denoiser and discriminator
-    avg_denoiser_loss = sum(val_denoiser_loss_records) / len(val_denoiser_loss_records)
-    avg_discriminator_loss = sum(val_discriminator_loss_records) / len(val_discriminator_loss_records)
-
-    eval_dir = r"/home/student/Documents/mds12/winnie/final_year_project/Data/Synthetic_images"
+    eval_dir = load_directory_from_yml(config_path)["eval_dir"]
 
     # evaluation
     dataset = create_evaluation_dataset(eval_dir)
@@ -137,18 +128,132 @@ def objective (trial):
 
 def run_tuning():
     study = optuna.create_study(direction='minimize', study_name="uft-tuning")
-    study.optimize(objective, n_trials=10)
+    study.optimize(objective, n_trials=2)
     print("Best hyperparameters:", study.best_params)
     print("Best value:", study.best_value)
+
+    # Specify the full path to the file
+    yaml_path = Path(__file__).parent / "best_params.yml"
 
     # Convert the dictionary to YAML format
     yaml_string = yaml.dump(study.best_params)
 
-    # Write the YAML string to a file
-    with open('best_params.yml', 'w') as file:
+    # Write the YAML string to the specified file
+    with open(yaml_path, 'w') as file:
         file.write(yaml_string)
 
-if __name__ == "__main__":
+def tuning_script():
+
+    all_runs_discriminator_loss_records = []
+    all_runs_denoiser_loss_records = []
+    all_runs_avg_psnr_records = []
+    all_runs_avg_ssim_records = []
+
     run_tuning()
+
+    best_params_path = Path(__file__).parent / "best_params.yml"
+    best_params = load_best_params_from_yml(best_params_path)
+
+    train_ratio = 0.7
+    config_path = Path(__file__).parent / "config.yml"
+    images_dir =  load_directory_from_yml(config_path)["images_dir"]
+    checkpoint_path = load_directory_from_yml(config_path)["checkpoint_path"]
+
+    save_dir = load_directory_from_yml(config_path)["save_dir"]
+    save_dir = create_unique_save_dir(save_dir)
+
+    current_run_save_dir = create_dir_with_hyperparam_name(
+            save_dir, best_params["denoiser_loss_b1"], best_params["denoiser_loss_b2"]
+    )
+
+    param_save_dir = current_run_save_dir
+    num_epochs = best_params.pop("num_epochs")
+    batch_size = best_params.pop("batch_size")
+
+
+    train_datasets, val_datasets = create_train_and_validation_unpaired_datasets(
+            images_dir, num_epochs, train_ratio=train_ratio
+    )
+
+    update_key_if_new_value_is_not_none(best_params, "checkpoint_path", checkpoint_path)
+    (
+        _,
+        (denoiser_loss_records, discriminator_loss_records),
+        (
+                val_loss_computed_indices,
+                val_denoiser_loss_records,
+                val_discriminator_loss_records,
+        ),
+    )= train_loop(train_datasets, val_datasets, checkpoint_path, param_save_dir, batch_size, num_epochs, **best_params)
+
+    all_runs_discriminator_loss_records.append(val_denoiser_loss_records)
+    all_runs_denoiser_loss_records.append(val_discriminator_loss_records)
+
+     # save train and val loss values for this run
+    save_denoiser_and_discriminator_loss_records_in_csv(
+        list(range(0, len(denoiser_loss_records))),
+        denoiser_loss_records,
+        discriminator_loss_records,
+        param_save_dir
+    )
+    save_denoiser_and_discriminator_loss_records_in_csv(
+        val_loss_computed_indices,
+        val_denoiser_loss_records,
+        val_discriminator_loss_records,
+        param_save_dir
+    )
+
+    # save denoiser and discriminator loss curves
+    plot_train_and_val_loss_curves(
+        list(range(0, len(denoiser_loss_records))),
+        val_loss_computed_indices,
+        denoiser_loss_records,
+        val_denoiser_loss_records,
+        "Unpaired Image Training Denoiser Loss Curve",
+        param_save_dir,
+    )
+        
+    plot_train_and_val_loss_curves(
+        list(range(0, len(discriminator_loss_records))),
+        val_loss_computed_indices,
+        discriminator_loss_records,
+        val_discriminator_loss_records,
+        "Unpaired Image Training Discriminator Loss Curve",
+        param_save_dir,
+    )
+
+    # evaluation
+    dataset = create_evaluation_dataset(images_dir)
+    dataloader = DataLoader(dataset, batch_size=best_params["batch_size"])
+    psnr_per_sample, ssim_per_sample = evaluate(
+        dataloader,
+        save_dir,
+        checkpoint_path,
+        save_images="sample",
+    )
+
+    # todo: there should be a function that only handles creation of metrics dataframe
+    # the function below current save created plot and return df
+    df_metric = plot_and_save_metrics(
+        {"psnr": psnr_per_sample, "ssim": ssim_per_sample}, param_save_dir
+    )
+
+    plot_and_save_metric_distribution(df_metric["psnr"], "PSNR", param_save_dir)
+    plot_and_save_metric_distribution(df_metric["ssim"], "SSIM", param_save_dir)
+    calc_and_save_average_metrics(
+        df_metric["psnr"], df_metric["ssim"], param_save_dir
+    )
+
+    all_runs_avg_psnr_records.append(df_metric["psnr"].mean().item())
+    all_runs_avg_ssim_records.append(df_metric["ssim"].mean().item())
+
+    # save_aggregated_data(
+    #     all_runs_discriminator_loss_records,
+    #     all_runs_avg_ssim_records,
+    #     os.path.join(param_save_dir, "aggregated_results"),
+    # )
+
+if __name__ == "__main__":
+    Fire(tuning_script)
    
         

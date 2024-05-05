@@ -17,7 +17,7 @@ def plot_and_save_metrics(
 
 
 def plot_and_save_metric_distribution(
-    metric_per_image: pd.Series[float], metric_name: str, save_dir: str
+    metric_per_image: pd.Series, metric_name: str, save_dir: str
 ) -> None:
     # create histogram for psnr
     plt.hist(metric_per_image)
@@ -29,7 +29,7 @@ def plot_and_save_metric_distribution(
 
 
 def calc_and_save_average_metrics(
-    psnr_per_sample: pd.Series[float], ssim_per_sample: pd.Series[float], save_dir: str
+    psnr_per_sample: pd.Series, ssim_per_sample: pd.Series, save_dir: str
 ) -> None:
     # record avg psnr and ssim as yaml
     avg_psnr = psnr_per_sample.mean().item()

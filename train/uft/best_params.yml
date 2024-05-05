@@ -1,0 +1,10 @@
+batch_size: 12
+calc_eval_loss_interval: 176
+denoiser_adam_lr: 4.024365912341927e-06
+denoiser_adversarial_loss_clip_max: 0.7702975311187359
+denoiser_adversarial_loss_clip_min: 0.4947696687758596
+denoiser_loss_b1: 0
+denoiser_loss_b2: 0.42150621750787776
+discriminator_adam_lr: 8.449137488176884e-05
+num_epochs: 13
+print_loss_interval: 373
