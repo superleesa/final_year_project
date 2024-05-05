@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from evaluation.evaluate import evaluate
 from utils.preprocess import (
     create_train_and_validation_unpaired_datasets,
-    create_evaluation_dataset,
+    create_evaluation_dataset
 )
 # from utils.eval_plots import (
 #     plot_and_save_metrics,
@@ -73,8 +73,6 @@ def get_params(trial):
             'discriminator_adam_lr': trial.suggest_float('discriminator_adam_lr', 1e-6, 1e-2, log = True), 
             'denoiser_loss_b1' : trial.suggest_int('denoiser_loss_b1', 0.1, 0.9),
             'denoiser_loss_b2' : trial.suggest_float('denoiser_loss_b2',0.1, 0.9),
-            'batch_size': trial.suggest_int('batch_size', 4, 24, step = 4),
-            'num_epochs':  trial.suggest_int('num_epochs', 5, 15), 
             'print_loss_interval': trial.suggest_int('print_loss_interval', 50, 500),
             'denoiser_adversarial_loss_clip_min': trial.suggest_float('denoiser_adversarial_loss_clip_min', 0.0, 1.0),
             'denoiser_adversarial_loss_clip_max': trial.suggest_float('denoiser_adversarial_loss_clip_max', 0.0, 1.0),
@@ -86,18 +84,19 @@ def get_params(trial):
 def objective (trial):
     images_dir_from_config = r"/home/student/Documents/mds12/winnie/final_year_project/Data/unpaired"
     images_dir =  images_dir_from_config
-    num_epochs = get_params(trial)["num_epochs"]
+    num_epochs = trial.suggest_int('num_epochs', 5, 15)
+    batch_size = trial.suggest_int('batch_size', 4, 24, step = 4)
     train_ratio = 0.7
     checkpoint_path = r"/home/student/Documents/mds12/winnie/final_year_project/src/toenet/checkpoint/checkpoint.pth.tar"
 
-    base_save_dir = r"/home/student/Documents/mds12/winnie/final_year_project/Data/output"
-    base_save_dir = create_unique_save_dir(base_save_dir)
+    save_dir = r"/home/student/Documents/mds12/winnie/final_year_project/Data/output"
+    save_dir = create_unique_save_dir(save_dir)
 
     current_run_save_dir = create_dir_with_hyperparam_name(
-            base_save_dir, get_params(trial)["denoiser_loss_b1"], get_params(trial)["denoiser_loss_b2"]
+            save_dir, get_params(trial)["denoiser_loss_b1"], get_params(trial)["denoiser_loss_b2"]
     )
 
-    base_save_dir = current_run_save_dir
+    param_save_dir = current_run_save_dir
 
     train_datasets, val_datasets = create_train_and_validation_unpaired_datasets(
             images_dir, num_epochs, train_ratio=train_ratio
@@ -113,13 +112,28 @@ def objective (trial):
                 val_denoiser_loss_records,
                 val_discriminator_loss_records,
         ),
-    )= train_loop(train_datasets, val_datasets, checkpoint_path, current_run_save_dir, **get_params(trial))
+    )= train_loop(train_datasets, val_datasets, checkpoint_path, param_save_dir, batch_size, num_epochs, **get_params(trial))
 
     # Calculate the average validation loss for denoiser and discriminator
     avg_denoiser_loss = sum(val_denoiser_loss_records) / len(val_denoiser_loss_records)
     avg_discriminator_loss = sum(val_discriminator_loss_records) / len(val_discriminator_loss_records)
+
+    eval_dir = r"/home/student/Documents/mds12/winnie/final_year_project/Data/Synthetic_images"
+
+    # evaluation
+    dataset = create_evaluation_dataset(eval_dir)
+    dataloader = DataLoader(dataset, batch_size= batch_size, drop_last=True)
+    psnr_per_sample, ssim_per_sample = evaluate(
+        dataloader,
+        save_dir,
+        checkpoint_path,
+        save_images= "sample"
+    )
+
+    avg_psnr = psnr_per_sample.mean().item()
+    avg_ssim = ssim_per_sample.mean().item()
     
-    return (avg_denoiser_loss + avg_discriminator_loss)
+    return avg_psnr + avg_ssim
 
 def run_tuning():
     study = optuna.create_study(direction='minimize', study_name="uft-tuning")
@@ -127,6 +141,12 @@ def run_tuning():
     print("Best hyperparameters:", study.best_params)
     print("Best value:", study.best_value)
 
+    # Convert the dictionary to YAML format
+    yaml_string = yaml.dump(study.best_params)
+
+    # Write the YAML string to a file
+    with open('best_params.yml', 'w') as file:
+        file.write(yaml_string)
 
 if __name__ == "__main__":
     run_tuning()
