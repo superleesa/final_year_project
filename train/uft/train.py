@@ -14,7 +14,7 @@ import sys
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from train.early_stopping import UFTEarlyStopping
+from utils.early_stopping import UFTEarlyStopping
 from src.toenet.TOENet import TOENet
 from utils.utils import load_checkpoint
 from utils.preprocess import UnpairedDataset
@@ -265,7 +265,7 @@ def train_loop(
             f"Discriminator Loss epoch={epoch_idx}",
             val_discriminator_loss,
         )
-        val_loss_computed_indices.append(epoch_idx)
+        val_loss_computed_indices.append(epoch_idx*step_idx)
 
         early_stopping(vaL_denoiser_loss, val_discriminator_loss)
         if early_stopping.early_stop:

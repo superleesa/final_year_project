@@ -5,11 +5,12 @@ import torch.nn as nn
 from pathlib import Path
 from tqdm import tqdm
 from src.toenet.TOENet import TOENet
-from train.early_stopping import SFTEarlyStopping
 
 import sys
 
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
+
+from utils.early_stopping import SFTEarlyStopping
 from utils.preprocess import PairedDataset
 from utils.utils import load_checkpoint
 
@@ -124,10 +125,10 @@ def train_loop(
         )
 
         val_loss_records.append(val_loss)
-        val_loss_computed_indices.append(epoch_idx)
+        val_loss_computed_indices.append(epoch_idx*step_idx)
 
         print("Validation Loss")
-        print(f"step {epoch_idx}: ", val_loss)
+        print(f"epoch {epoch_idx}: ", val_loss)
 
         early_stopping(val_loss)
         if early_stopping.early_stop:

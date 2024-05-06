@@ -51,7 +51,7 @@ def unpaired_train_script(
     images_dir_from_config = params.pop("images_dir")
     images_dir = images_dir or images_dir_from_config
     num_epochs = params["num_epochs"]
-    train_ratio = params.get("train_ratio") or 0.8
+    train_ratio = params.pop("train_ratio") or 0.8
 
     save_dir = save_dir or params["save_dir"]
     save_dir = create_unique_save_dir(save_dir)
