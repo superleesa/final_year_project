@@ -18,7 +18,7 @@ def denoise_and_save_one(model: TOENet, filename: Path) -> str:
     with torch.no_grad():
         input_image = eval_transform(cv2_image).unsqueeze(0)
         model_output = model(input_image)[0]  # get the first image of a batch
-        restored_image = postprocess(model_output)
+        restored_image = postprocess(model_output)[0]  # get the first image of batch again (preprocess func increases dimension)
     name, extention = os.path.splitext(filename)
     save_path = str(Path(current_app.config["upload_folder"]) / (name + "_denoised" + extention))
     cv2.imwrite(save_path, restored_image)
