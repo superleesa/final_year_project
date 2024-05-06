@@ -8,9 +8,9 @@ from save_image import save_image
 app = Flask(__name__)
 
 # TODO: create appropriate config file
-app.config["is_mock"] = True
+app.config["is_mock"] = False
 app.config['upload_folder'] = Path(__file__).parent / "images"
-app.config["checkpoint_dir"] = Path(__file__).parent / "checkpoint.pth.tar"
+app.config["checkpoint_dir"] = Path(__file__).parent / "sft_toenet_on_sie.pth"
 
 @app.route("/")
 def index():
