@@ -40,9 +40,6 @@ class UFTEarlyStopping:
                 print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
             if self.counter >= self.patience:
                 self.early_stop = True
-            self.best_denoiser_loss = denoiser_loss
-            self.best_discriminator_loss = discriminator_loss
-            self.counter = 0
         else:
             self.best_denoiser_loss = denoiser_loss
             self.best_discriminator_loss = discriminator_loss
