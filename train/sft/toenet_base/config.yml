@@ -10,5 +10,5 @@ train_ratio: 0.8
 print_loss_interval: 100
 early_stopping_patience: 5
 checkpoint_path: "/home/student/Documents/mds12/sho/final_year_project/src/toenet/checkpoint/checkpoint.pth.tar"
-images_dir: "/home/student/Documents/mds12/sho/final_year_project/Data/Synthetic_images"
+images_dir: "/home/student/Documents/mds12/sho/final_year_project/Data/paired"
 save_dir: "/home/student/Documents/mds12/sho/final_year_project/Data/output/base_toenet_on_sie"
