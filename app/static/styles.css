@@ -1,6 +1,4 @@
 * {
-    margin: 0;
-    padding: 0;
     font-family: 'Poppins';
 }
 
@@ -10,15 +8,14 @@ body {
 
 .main-container {
     display: grid;
-    grid-template-columns: [col] 600px [col] 600px;
+    grid-template-columns: [col] 45% [col] 44%;
     grid-template-rows: [rows] auto [rows] auto [rows] auto;
-    grid-gap: 50px;
+    grid-gap: 70px;
     margin: 0 auto;
     height: 100%;
     background-color: #131313;
     z-index: 1;
-    width: 100%;
-    max-width: 1200px;
+    width: 80%;
 }
 
 .main-content {
@@ -26,7 +23,7 @@ body {
     grid-row: rows;
     background-color: #141414;
     font-family: 'Montserrat';
-    padding-top: 100px;
+    padding-top: 150px;
 }
 
 .main-content h1 {
