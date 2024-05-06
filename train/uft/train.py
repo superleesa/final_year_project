@@ -14,7 +14,7 @@ import sys
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-
+from utils.early_stopping import UFTEarlyStopping
 from src.toenet.TOENet import TOENet
 from utils.utils import load_checkpoint
 from utils.preprocess import UnpairedDataset
@@ -149,6 +149,7 @@ def train_loop(
     num_epochs: int,
     print_loss_interval: int,
     calc_eval_loss_interval: int,
+    early_stopping_patience: int
 ) -> tuple[
     TOENet, tuple[list[float], list[float]], tuple[list[int], list[float], list[float]]
 ]:
@@ -157,6 +158,7 @@ def train_loop(
     is_gpu = True
     denoiser = load_checkpoint(checkpoint_path, is_gpu)  # base model already in gpu
     discriminator = Discriminator().cuda()
+    early_stopping = UFTEarlyStopping(patience=early_stopping_patience)
 
     # denoiser settings
     denoiser_optimizer = optim.Adam(denoiser.parameters(), lr=denoiser_adam_lr)
@@ -235,37 +237,41 @@ def train_loop(
                     f"Discriminator Loss at epoch={epoch_idx}&step={step_idx}",
                     discriminator_loss_records[-1],
                 )
-
-            if step_idx % calc_eval_loss_interval == 0:
-                val_dataloader = DataLoader(
-                    val_datasets[epoch_idx], batch_size=batch_size
-                )
-                vaL_denoiser_loss, val_discriminator_loss = validate_loop(
-                    denoiser,
-                    discriminator,
-                    val_dataloader,
-                    denoiser_loss_b1,
-                    denoiser_loss_b2,
-                    denoiser_adversarial_criterion,
-                    discriminator_adversarial_criterion,
-                    denoiser_adversarial_loss_clip_min,
-                    denoiser_adversarial_loss_clip_max,
-                )
-                val_denoiser_loss_records.append(vaL_denoiser_loss)
-                val_discriminator_loss_records.append(val_discriminator_loss)
-                print("Validation Loss")
-                print(
-                    f"Denoiser Loss at epoch={epoch_idx}&step={step_idx}:",
-                    vaL_denoiser_loss,
-                )
-                print(
-                    f"Discriminator Loss epoch={epoch_idx}&step={step_idx}",
-                    val_discriminator_loss,
-                )
-                val_loss_computed_indices.append(global_step_counter)
-
+            
             torch.cuda.empty_cache()
-            global_step_counter += 1
+
+        val_dataloader = DataLoader(
+            val_datasets[epoch_idx], batch_size=batch_size
+        )
+        vaL_denoiser_loss, val_discriminator_loss = validate_loop(
+            denoiser,
+            discriminator,
+            val_dataloader,
+            denoiser_loss_b1,
+            denoiser_loss_b2,
+            denoiser_adversarial_criterion,
+            discriminator_adversarial_criterion,
+            denoiser_adversarial_loss_clip_min,
+            denoiser_adversarial_loss_clip_max,
+        )
+        val_denoiser_loss_records.append(vaL_denoiser_loss)
+        val_discriminator_loss_records.append(val_discriminator_loss)
+        print("Validation Loss")
+        print(
+            f"Denoiser Loss at epoch={epoch_idx}:",
+            vaL_denoiser_loss,
+        )
+        print(
+            f"Discriminator Loss epoch={epoch_idx}",
+            val_discriminator_loss,
+        )
+        val_loss_computed_indices.append(epoch_idx*step_idx)
+
+        early_stopping(vaL_denoiser_loss, val_discriminator_loss)
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break
+
 
     # save
     torch.save(denoiser.state_dict(), f"{save_dir}/denoiser.pth")

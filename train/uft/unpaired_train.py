@@ -34,6 +34,7 @@ def load_params_from_yml(config_path: str | Path) -> dict:
         "calc_eval_loss_interval": config["calc_eval_loss_interval"],
         "denoiser_adversarial_loss_clip_min": config.get("clip_min"),
         "denoiser_adversarial_loss_clip_max": config.get("clip_max"),
+        "early_stopping_patience": config["early_stopping_patience"]
     }
 
 
@@ -50,7 +51,7 @@ def unpaired_train_script(
     images_dir_from_config = params.pop("images_dir")
     images_dir = images_dir or images_dir_from_config
     num_epochs = params["num_epochs"]
-    train_ratio = params.get("train_ratio") or 0.8
+    train_ratio = params.pop("train_ratio") or 0.8
 
     save_dir = save_dir or params["save_dir"]
     save_dir = create_unique_save_dir(save_dir)
