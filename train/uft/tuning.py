@@ -79,7 +79,7 @@ def get_params(trial):
 def objective (trial):
     config_path = Path(__file__).parent / "config.yml"
     images_dir =  load_directory_from_yml(config_path)["images_dir"]
-    num_epochs = trial.suggest_int('num_epochs', 5, 15)
+    num_epochs = trial.suggest_int('num_epochs', 1, 2)
     batch_size = trial.suggest_int('batch_size', 4, 24, step = 4)
     train_ratio = 0.7
     checkpoint_path = load_directory_from_yml(config_path)["checkpoint_path"]
@@ -124,11 +124,11 @@ def objective (trial):
     avg_psnr = psnr_per_sample.mean().item()
     avg_ssim = ssim_per_sample.mean().item()
     
-    return avg_psnr + avg_ssim
+    return avg_psnr, avg_ssim
 
 def run_tuning():
-    study = optuna.create_study(direction='minimize', study_name="uft-tuning")
-    study.optimize(objective, n_trials=2)
+    study = optuna.create_study(direction="maximize", study_name="uft-tuning")
+    study.optimize(objective, n_trials=1)
     print("Best hyperparameters:", study.best_params)
     print("Best value:", study.best_value)
 
