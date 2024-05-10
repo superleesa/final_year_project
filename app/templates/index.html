@@ -21,6 +21,7 @@
                     <label for="image-input"><i class=" fa fa-solid fa-upload"></i> Upload here</label>
                     <button type="submit" class="denoise_button">Denoise</button>
                 </form>
+                <button type="button" id="download_button">Download</button>
             </div>
         </div>
         <div class="main-img-container">
@@ -98,11 +99,33 @@
                     // Append the image to a container in the DOM
                     document.getElementById('output').innerHTML = ''; // Clear previous image
                     document.getElementById('output').appendChild(image);
+
                 })
                 .catch(error => {
                     console.error('Error fetching image:', error);
                 });
         });
+    </script>
+
+    <script>
+        document.getElementById('download_button').addEventListener('click',
+            function(event) {
+                const img_download = document.getElementById('output').lastChild;
+                // Fetch the image as a blob
+                fetch(img_download.src)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        // Create a download link
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'denoised_image.jpg';
+                        // Trigger a click on the download link
+                        a.click();
+                        // Revoke the object URL to free up resources
+                        window.URL.revokeObjectURL(url);
+                    });
+            });
     </script>
 </body>
 
