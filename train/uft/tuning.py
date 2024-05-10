@@ -60,14 +60,17 @@ def get_params(trial):
 
 def objective (trial):
     config_path = Path(__file__).parent / "config.yml"
-    images_dir =  load_directory_from_yml(config_path)["images_dir"]
+    config_dir = load_directory_from_yml(config_path)
+
+    images_dir =  config_dir["images_dir"]
+    checkpoint_path = config_dir["checkpoint_path"]
+    save_dir = create_unique_save_dir(config_dir["save_dir"])
+    eval_dir = config_dir["eval_dir"]
+
     num_epochs = trial.suggest_int('num_epochs', 1, 2)
     batch_size = trial.suggest_int('batch_size', 4, 24, step = 4)
     train_ratio = 0.7
-    checkpoint_path = load_directory_from_yml(config_path)["checkpoint_path"]
 
-    save_dir = load_directory_from_yml(config_path)["save_dir"]
-    save_dir = create_unique_save_dir(save_dir)
 
     current_run_save_dir = create_dir_with_hyperparam_name(
             save_dir, get_params(trial)["denoiser_loss_b1"], get_params(trial)["denoiser_loss_b2"]
@@ -91,7 +94,6 @@ def objective (trial):
         ),
     )= train_loop(train_datasets, val_datasets, checkpoint_path, param_save_dir, batch_size, num_epochs, **get_params(trial))
 
-    eval_dir = load_directory_from_yml(config_path)["eval_dir"]
 
     # evaluation
     dataset = create_evaluation_dataset(eval_dir)
@@ -104,9 +106,8 @@ def objective (trial):
     )
 
     avg_psnr = psnr_per_sample.mean().item()
-    avg_ssim = ssim_per_sample.mean().item()
     
-    return avg_psnr + avg_ssim
+    return avg_psnr
 
 def run_tuning():
     study = optuna.create_study(direction="maximize", study_name="uft-tuning")
