@@ -16,6 +16,10 @@ app.config["checkpoint_dir"] = Path(__file__).parent / "checkpoint.pth.tar"
 def index():
     return render_template("index.html")
 
+@app.route("/guidelines")
+def guidelines():
+    return render_template("guidelines.html")
+
 @app.route("/restore-image", methods=["POST"])
 def restore_image():
     image_name = save_image()
