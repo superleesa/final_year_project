@@ -11,10 +11,10 @@ print(sys.path)
 
 from utils.preprocess import create_train_and_validation_paired_datasets
 from train import train_loop
-from utils.utils import create_unique_save_dir, update_key_if_not_none
+from utils.utils import create_unique_save_dir, update_key_if_new_value_is_not_none
 
 
-def load_params_from_yml(config_path: str | Path) -> dict:
+def load_sft_params_from_yml(config_path: str | Path) -> dict:
 
     with open(config_path) as ymlfile:
         config = yaml.safe_load(ymlfile)
@@ -43,7 +43,7 @@ def paired_train_script(
 
     # load params from yml file
     config_path = Path(__file__).parent / "config.yml"
-    params = load_params_from_yml(config_path)
+    params = load_sft_params_from_yml(config_path)
 
     images_dir_from_config = params.pop("images_dir")
     images_dir = images_dir or images_dir_from_config
@@ -52,13 +52,13 @@ def paired_train_script(
 
     save_dir = save_dir or params["save_dir"]
     save_dir = create_unique_save_dir(save_dir)
-    update_key_if_not_none(params, "save_dir", save_dir)
+    update_key_if_new_value_is_not_none(params, "save_dir", save_dir)
 
     train_datasets, val_datasets = create_train_and_validation_paired_datasets(
         images_dir, num_datasets=num_epochs, train_ratio=train_ratio
     )
 
-    update_key_if_not_none(params, "checkpoint_path", checkpoint_path)
+    update_key_if_new_value_is_not_none(params, "checkpoint_path", checkpoint_path)
     _, train_loss_records, val_loss_records, val_loss_computed_indices = train_loop(
         train_datasets, val_datasets, **params
     )  # Checkpoints will be saved inside `save_dir`
