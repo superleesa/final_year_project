@@ -16,6 +16,10 @@ app.config["checkpoint_dir"] = Path(__file__).parent / "sft_toenet_on_sie.pth"
 def index():
     return render_template("index.html")
 
+@app.route("/guidelines")
+def guidelines():
+    return render_template("guidelines.html")
+
 @app.route("/restore-image", methods=["POST"])
 def restore_image():
     image_name = save_image()
