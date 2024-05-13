@@ -11,32 +11,30 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from utils.preprocess import create_train_and_validation_unpaired_datasets
-from utils.utils import create_unique_save_dir, update_key_if_new_value_is_not_none
+from utils.utils import create_unique_save_dir, update_key_if_not_none
 
 
-def load_uft_params_from_yml(config_path: str | Path, best_params_path: str | Path) -> dict:
+def load_params_from_yml(config_path: str | Path) -> dict:
 
     with open(config_path) as ymlfile:
         config = yaml.safe_load(ymlfile)
-
-    with open(best_params_path) as ymlfile:
-        best_params = yaml.safe_load(ymlfile)
 
     return {
         "checkpoint_path": config["checkpoint_path"],
         "save_dir": config["save_dir"],
         "images_dir": config["images_dir"],
         "train_ratio": config.get("train_ratio"),
-        "denoiser_adam_lr": best_params["denoiser_adam_lr"],
-        "discriminator_adam_lr": best_params["discriminator_adam_lr"],
-        "denoiser_loss_b1": best_params["denoiser_loss_b1"],
-        "denoiser_loss_b2": best_params["denoiser_loss_b2"],
-        "batch_size": best_params["batch_size"],
-        "num_epochs": best_params["num_epochs"],
-        "print_loss_interval": best_params["print_loss_interval"],
-        "calc_eval_loss_interval": best_params["calc_eval_loss_interval"],
-        "denoiser_adversarial_loss_clip_min": best_params.get("clip_min"),
-        "denoiser_adversarial_loss_clip_max": best_params.get("clip_max"),
+        "denoiser_adam_lr": config["denoiser_adam_lr"],
+        "discriminator_adam_lr": config["discriminator_adam_lr"],
+        "denoiser_loss_b1": config["denoiser_loss_b1"],
+        "denoiser_loss_b2": config["denoiser_loss_b2"],
+        "batch_size": config["batch_size"],
+        "num_epochs": config["num_epochs"],
+        "print_loss_interval": config["print_loss_interval"],
+        "calc_eval_loss_interval": config["calc_eval_loss_interval"],
+        "denoiser_adversarial_loss_clip_min": config.get("clip_min"),
+        "denoiser_adversarial_loss_clip_max": config.get("clip_max"),
+        "early_stopping_patience": config["early_stopping_patience"]
     }
 
 
@@ -48,24 +46,22 @@ def unpaired_train_script(
 
     # load params from yml file
     config_path = Path(__file__).parent / "config.yml"
-    best_params_path = Path(__file__).parent / "best_params.yml"
-
-    params = load_uft_params_from_yml(config_path, best_params_path)
+    params = load_params_from_yml(config_path)
 
     images_dir_from_config = params.pop("images_dir")
     images_dir = images_dir or images_dir_from_config
     num_epochs = params["num_epochs"]
-    train_ratio = params.pop("train_ratio") or 0.8
+    train_ratio = params.get("train_ratio") or 0.8
 
     save_dir = save_dir or params["save_dir"]
     save_dir = create_unique_save_dir(save_dir)
-    update_key_if_new_value_is_not_none(params, "save_dir", save_dir)
+    update_key_if_not_none(params, "save_dir", save_dir)
 
     train_datasets, val_datasets = create_train_and_validation_unpaired_datasets(
         images_dir, num_epochs, train_ratio=train_ratio
     )
 
-    update_key_if_new_value_is_not_none(params, "checkpoint_path", checkpoint_path)
+    update_key_if_not_none(params, "checkpoint_path", checkpoint_path)
     (
         _,
         (denoiser_loss_records, discriminator_loss_records),

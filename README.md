@@ -1,4 +1,4 @@
-# FYP: Sand-Dust Image Restoration
+# DehazeGAN: Sand-Dust Image Restoration using Transformer-based Denoiser and Adversarial Learning
 
 ## how to start
 1. install packages in requirements.txt

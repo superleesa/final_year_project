@@ -1,6 +1,6 @@
 denoiser_adam_lr: 0.0001
 discriminator_adam_lr: 0.0001
-num_epochs: 10
+num_epochs: 50
 step_lr_step_size: 30
 step_lr_gamma: 0.1
 batch_size: 4
@@ -8,6 +8,7 @@ print_loss_interval: 100
 calc_eval_loss_interval: 100
 denoiser_loss_b1: 0.5
 denoiser_loss_b2: 0.5
-checkpoint_path: C:\Users\super\Documents\1.School\FYP\fyp_project\src\toenet\checkpoint\checkpoint.pth.tar
-images_dir: C:\Users\super\Documents\1.School\FYP\fyp_project\Data\input\unpaired
-save_dir: C:\Users\super\Documents\1.School\FYP\fyp_project\Data\output
+early_stopping_patience: 5
+checkpoint_path: "/home/student/Documents/mds12/sho/final_year_project/src/toenet/checkpoint/checkpoint.pth.tar"
+images_dir: "/home/student/Documents/mds12/sho/final_year_project/Data/unpaired"
+save_dir: "/home/student/Documents/mds12/sho/final_year_project/Data/output/uft"
