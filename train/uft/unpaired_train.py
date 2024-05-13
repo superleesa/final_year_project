@@ -11,7 +11,7 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from utils.preprocess import create_train_and_validation_unpaired_datasets
-from utils.utils import create_unique_save_dir, update_key_if_not_none
+from utils.utils import create_unique_save_dir, update_key_if_new_value_is_not_none
 
 
 def load_params_from_yml(config_path: str | Path) -> dict:
@@ -51,17 +51,17 @@ def unpaired_train_script(
     images_dir_from_config = params.pop("images_dir")
     images_dir = images_dir or images_dir_from_config
     num_epochs = params["num_epochs"]
-    train_ratio = params.get("train_ratio") or 0.8
+    train_ratio = params.pop("train_ratio") or 0.8
 
     save_dir = save_dir or params["save_dir"]
     save_dir = create_unique_save_dir(save_dir)
-    update_key_if_not_none(params, "save_dir", save_dir)
+    update_key_if_new_value_is_not_none(params, "save_dir", save_dir)
 
     train_datasets, val_datasets = create_train_and_validation_unpaired_datasets(
         images_dir, num_epochs, train_ratio=train_ratio
     )
 
-    update_key_if_not_none(params, "checkpoint_path", checkpoint_path)
+    update_key_if_new_value_is_not_none(params, "checkpoint_path", checkpoint_path)
     (
         _,
         (denoiser_loss_records, discriminator_loss_records),
