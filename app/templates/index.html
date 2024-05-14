@@ -29,12 +29,12 @@
                     <input type="file" id="image-input" name="image" accept="image/*" required>
                     <label for="image-input"><i class=" fa fa-solid fa-upload"></i> Upload here</label>
                     <button type="submit" class="denoise_button">Denoise</button>
+                    <button type="button" id="download_button">Download</button>
                 </form>
-                <button type="button" id="download_button">Download</button>
             </div>
         </div>
         <div class="main-img-container">
-            <img id="main-img" src="{{url_for('static',filename='icon.png')}}" />
+            <img id="main-img" src="{{url_for('static',filename='icon_denoise.png')}}" />
         </div>
         <div class="original-text">
             <h1>Original</h1>
@@ -63,6 +63,7 @@
 
                         // Set the src attribute of the image to the data URL
                         img.src = reader.result;
+                        img.height = 400;
 
                         // Append the image to the output container
                         var original = document.getElementById('original');
@@ -104,6 +105,7 @@
                     // Create an image element and set its source to the blob URL
                     const image = document.createElement('img');
                     image.src = imageUrl;
+                    image.height = 400;
 
                     // Append the image to a container in the DOM
                     document.getElementById('output').innerHTML = ''; // Clear previous image
