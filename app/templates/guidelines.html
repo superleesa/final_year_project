@@ -19,6 +19,46 @@
             </ul>
         </nav>
     </header>
+    <div class="guide-container">
+        <h1 id="title">Important Notes</h1>
+        <ul>
+            <li>The Power Denoise web application could only be used on devices with GPU. If your device does not have GPU, please seek assistance from the project team.</li>
+            <li>Only one image is accepted at once.</li>
+            <li>Remember to download your image once denoised. Once the page refreshes, the input and output would be erased.</li>
+        </ul>
+        <h1 id="title">Image Guidelines</h1>
+        <ul>
+            <li>The image input is expected to be a sandstorm image.</li>
+            <li>Acceptable image formats:
+                <ul>
+                    <li>Windows bitmaps: *.bmp, *.dib</li>
+                    <li>JPEG files: *.jpeg, *.jpg, *.jpe</li>
+                    <li>JPEG 2000 files: *.jp2</li>
+                    <li>Portable Network Graphics: *.png</li>
+                    <li>WebP: *.webp</li>
+                    <li>AVIF: *.avif</li>
+                    <li>Portable image format: *.pbm, *.pgm, *.ppm, *.pxm, *.pnm</li>
+                    <li>PFM files: *.pfm</li>
+                    <li>Sun rasters: *.sr, *.ras</li>
+                    <li>TIFF files: *.tiff, *.tif</li>
+                    <li>OpenEXR Image files: *.exr</li>
+                    <li>Radiance HDR: *.hdr, *.pic</li>
+                    <li>Raster and Vector geospatial data supported by GDAL</li>
+                </ul>
+            </li>
+            <li>Individual image files should not exceed 10 MB.</li>
+            <li>Maintain the original aspect ratio of the image.</li>
+            <li>Remove any watermarks or text overlays from the image.</li>
+            <li>Ensure image size has larger than xx x xx</li>
+        </ul>
+        <h1 id="title">Steps</h1>
+        <ul>
+            <li>Go to DehazeGAN navigation tab</li>
+            <li>Click on upload image. Make sure the image uploaded is as per the "Image Guidelines" set above.</li>
+            <li>A preview of the image uploaded would be shown. Once confirmed, click on Denoise.</li>
+            <li>You can download your image by clicking on the Download button. If you do not download your image, your image would be erased once the page reloads.</li>
+        </ul>
+    </div>
 </body>
 
 </html>
