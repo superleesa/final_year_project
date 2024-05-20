@@ -45,15 +45,24 @@ def load_directory_from_yml(config_path: str | Path) -> dict:
 
 def get_params(trial):
     # Generate the optimizers.
+    
+    denoiser_adam_lr = trial.suggest_float('denoiser_adam_lr', 1e-6, 1e-2, log = True)
+    discriminator_adam_lr = trial.suggest_float('discriminator_adam_lr', 1e-6, 1e-2, log = True)
+    denoiser_loss_b1 = trial.suggest_float('denoiser_loss_b1', 0.1, 0.9)
+    denoiser_loss_b2 = 1 - denoiser_loss_b1
+    print_loss_interval = trial.suggest_int('print_loss_interval', 50, 500)
+    denoiser_adversarial_loss_clip_max = trial.suggest_float('denoiser_adversarial_loss_clip_min', 0.0, 1.0)
+    denoiser_adversarial_loss_clip_min = trial.suggest_float('denoiser_adversarial_loss_clip_max', 0.0, 1.0)
+    calc_eval_loss_interval = trial.suggest_int("calc_eval_loss_interval", 50, 500)
+
+
     params = {
-            'denoiser_adam_lr': trial.suggest_float('denoiser_adam_lr', 1e-6, 1e-2, log = True), 
-            'discriminator_adam_lr': trial.suggest_float('discriminator_adam_lr', 1e-6, 1e-2, log = True), 
-            'denoiser_loss_b1' : trial.suggest_int('denoiser_loss_b1', 0.1, 0.9),
-            'denoiser_loss_b2' : trial.suggest_float('denoiser_loss_b2',0.1, 0.9),
-            'print_loss_interval': trial.suggest_int('print_loss_interval', 50, 500),
-            'denoiser_adversarial_loss_clip_min': trial.suggest_float('denoiser_adversarial_loss_clip_min', 0.0, 1.0),
-            'denoiser_adversarial_loss_clip_max': trial.suggest_float('denoiser_adversarial_loss_clip_max', 0.0, 1.0),
-            'calc_eval_loss_interval': trial.suggest_int("calc_eval_loss_interval", 50, 500),
+            'denoiser_adam_lr': denoiser_adam_lr,
+            'discriminator_adam_lr': discriminator_adam_lr,
+            'denoiser_loss_b1' : denoiser_loss_b1,
+            'print_loss_interval': denoiser_loss_b2,
+            'denoiser_adversarial_loss_clip_min': denoiser_adversarial_loss_clip_min,
+            'calc_eval_loss_interval': calc_eval_loss_interval,
     }
 
     return params
