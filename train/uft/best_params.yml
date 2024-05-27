@@ -1,9 +1,7 @@
-batch_size: 8
-calc_eval_loss_interval: 409
-denoiser_adam_lr: 4.776729571225422e-05
-denoiser_adversarial_loss_clip_max: 0.4337323515489777
-denoiser_adversarial_loss_clip_min: 0.3332490914063566
-denoiser_loss_b1: 0.1562460608300291
-discriminator_adam_lr: 0.004821538386409875
-num_epochs: 13
-print_loss_interval: 107
+calc_eval_loss_interval: 200
+denoiser_adam_lr: 0.00012090676833404486
+denoiser_adversarial_loss_clip_max: 0.7253553053728639
+denoiser_adversarial_loss_clip_min: 0.42959290591546195
+denoiser_loss_b1: 0.654205478362656
+discriminator_adam_lr: 0.009627422411867004
+num_epochs: 11
