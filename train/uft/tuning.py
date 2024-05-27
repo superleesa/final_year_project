@@ -45,15 +45,27 @@ def load_directory_from_yml(config_path: str | Path) -> dict:
 
 def get_params(trial):
     # Generate the optimizers.
+    
+    denoiser_adam_lr = trial.suggest_float('denoiser_adam_lr', 1e-6, 1e-2, log = True)
+    discriminator_adam_lr = trial.suggest_float('discriminator_adam_lr', 1e-6, 1e-2, log = True)
+    denoiser_loss_b1 = trial.suggest_float('denoiser_loss_b1', 0.1, 0.9)
+    denoiser_loss_b2 = 1 - denoiser_loss_b1
+    print_loss_interval = trial.suggest_int('print_loss_interval', 50, 500)
+    denoiser_adversarial_loss_clip_max = trial.suggest_float('denoiser_adversarial_loss_clip_max', 0.0, 1.0)
+    denoiser_adversarial_loss_clip_min = trial.suggest_float('denoiser_adversarial_loss_clip_min', 0.0, 1.0)
+    calc_eval_loss_interval = trial.suggest_int("calc_eval_loss_interval", 50, 500)
+
+
     params = {
-            'denoiser_adam_lr': trial.suggest_float('denoiser_adam_lr', 1e-6, 1e-2, log = True), 
-            'discriminator_adam_lr': trial.suggest_float('discriminator_adam_lr', 1e-6, 1e-2, log = True), 
-            'denoiser_loss_b1' : trial.suggest_int('denoiser_loss_b1', 0.1, 0.9),
-            'denoiser_loss_b2' : trial.suggest_float('denoiser_loss_b2',0.1, 0.9),
-            'print_loss_interval': trial.suggest_int('print_loss_interval', 50, 500),
-            'denoiser_adversarial_loss_clip_min': trial.suggest_float('denoiser_adversarial_loss_clip_min', 0.0, 1.0),
-            'denoiser_adversarial_loss_clip_max': trial.suggest_float('denoiser_adversarial_loss_clip_max', 0.0, 1.0),
-            'calc_eval_loss_interval': trial.suggest_int("calc_eval_loss_interval", 50, 500),
+            'denoiser_adam_lr': denoiser_adam_lr,
+            'discriminator_adam_lr': discriminator_adam_lr,
+            'denoiser_loss_b1' : denoiser_loss_b1,
+            'denoiser_loss_b2': denoiser_loss_b2,
+            'print_loss_interval': print_loss_interval,
+            'denoiser_adversarial_loss_clip_max': denoiser_adversarial_loss_clip_max,
+            'denoiser_adversarial_loss_clip_min': denoiser_adversarial_loss_clip_min,
+            'calc_eval_loss_interval': calc_eval_loss_interval,
+            'early_stopping_patience': 5
     }
 
     return params
@@ -67,8 +79,8 @@ def objective (trial):
     save_dir = create_unique_save_dir(config_dir["save_dir"])
     eval_dir = config_dir["eval_dir"]
 
-    num_epochs = trial.suggest_int('num_epochs', 1, 2)
-    batch_size = trial.suggest_int('batch_size', 4, 24, step = 4)
+    num_epochs = trial.suggest_int('num_epochs', 1, 15)
+    batch_size = trial.suggest_int('batch_size', 4, 20, step = 4)
     train_ratio = 0.7
 
 
@@ -111,7 +123,7 @@ def objective (trial):
 
 def run_tuning():
     study = optuna.create_study(direction="maximize", study_name="uft-tuning")
-    study.optimize(objective, n_trials=1)
+    study.optimize(objective, n_trials=5)
     print("Best hyperparameters:", study.best_params)
     print("Best value:", study.best_value)
 
