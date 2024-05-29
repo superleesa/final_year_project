@@ -50,9 +50,6 @@ def get_params(trial):
     discriminator_adam_lr = trial.suggest_float('discriminator_adam_lr', 1e-6, 1e-2, log = True)
     denoiser_loss_b1 = trial.suggest_float('denoiser_loss_b1', 0.1, 1.0)
     denoiser_loss_b2 = 1 - denoiser_loss_b1
-    denoiser_adversarial_loss_clip_max = None
-    denoiser_adversarial_loss_clip_min = None
-    calc_eval_loss_interval = trial.suggest_int("calc_eval_loss_interval", 50, 500)
 
 
     params = {
@@ -61,9 +58,9 @@ def get_params(trial):
             'denoiser_loss_b1' : denoiser_loss_b1,
             'denoiser_loss_b2': denoiser_loss_b2,
             'print_loss_interval': 107,
-            'denoiser_adversarial_loss_clip_max': denoiser_adversarial_loss_clip_max,
-            'denoiser_adversarial_loss_clip_min': denoiser_adversarial_loss_clip_min,
-            'calc_eval_loss_interval': calc_eval_loss_interval,
+            'denoiser_adversarial_loss_clip_max': None,
+            'denoiser_adversarial_loss_clip_min': None,
+            'calc_eval_loss_interval': None,
             'early_stopping_patience': 5
     }
 
