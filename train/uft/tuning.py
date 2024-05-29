@@ -48,10 +48,10 @@ def get_params(trial):
     
     denoiser_adam_lr = trial.suggest_float('denoiser_adam_lr', 1e-6, 1e-2, log = True)
     discriminator_adam_lr = trial.suggest_float('discriminator_adam_lr', 1e-6, 1e-2, log = True)
-    denoiser_loss_b1 = trial.suggest_float('denoiser_loss_b1', 0.1, 0.9)
+    denoiser_loss_b1 = trial.suggest_float('denoiser_loss_b1', 0.1, 1.0)
     denoiser_loss_b2 = 1 - denoiser_loss_b1
-    denoiser_adversarial_loss_clip_max = trial.suggest_float('denoiser_adversarial_loss_clip_max', 0.0, 1.0)
-    denoiser_adversarial_loss_clip_min = trial.suggest_float('denoiser_adversarial_loss_clip_min', 0.0, 1.0)
+    denoiser_adversarial_loss_clip_max = None
+    denoiser_adversarial_loss_clip_min = None
     calc_eval_loss_interval = trial.suggest_int("calc_eval_loss_interval", 50, 500)
 
 
@@ -78,7 +78,7 @@ def objective (trial):
     save_dir = create_unique_save_dir(config_dir["save_dir"])
     eval_dir = config_dir["eval_dir"]
 
-    num_epochs = trial.suggest_int('num_epochs', 1, 15)
+    num_epochs = 17
     batch_size = 4
     train_ratio = 0.7
 
@@ -122,7 +122,7 @@ def objective (trial):
 
 def run_tuning():
     study = optuna.create_study(direction="maximize", study_name="uft-tuning")
-    study.optimize(objective, n_trials=15)
+    study.optimize(objective, n_trials=25)
     print("Best hyperparameters:", study.best_params)
     print("Best value:", study.best_value)
 

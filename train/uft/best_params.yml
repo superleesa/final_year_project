@@ -1,7 +1,4 @@
-calc_eval_loss_interval: 200
-denoiser_adam_lr: 0.00012090676833404486
-denoiser_adversarial_loss_clip_max: 0.7253553053728639
-denoiser_adversarial_loss_clip_min: 0.42959290591546195
-denoiser_loss_b1: 0.654205478362656
-discriminator_adam_lr: 0.009627422411867004
-num_epochs: 11
+calc_eval_loss_interval: 381
+denoiser_adam_lr: 1.3745488663779329e-05
+denoiser_loss_b1: 0.48803387886673455
+discriminator_adam_lr: 0.0003565004908213629
