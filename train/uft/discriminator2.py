@@ -62,8 +62,13 @@ class MainNetworkStructure(nn.Module):
 		self.conv_g_in = nn.Conv2d(1,channel,kernel_size=1,stride=1,padding=0,bias=False)    
 		self.conv_b_in = nn.Conv2d(1,channel,kernel_size=1,stride=1,padding=0,bias=False)            
 		self.conv_in = nn.Conv2d(inchannel,channel,kernel_size=1,stride=1,padding=0,bias=False)
-
+		
 		self.maxpool = nn.MaxPool2d(kernel_size=3,stride=2,padding=1)
+		self.classifier_head = nn.Sequential(
+			nn.Flatten(),
+			nn.Linear(408, 1),
+			nn.Sigmoid(),
+        )
 
 	def forward(self,x):
         
@@ -81,9 +86,10 @@ class MainNetworkStructure(nn.Module):
 		emout = self.em(x_emin * x_out_m)
 		x_esin = self.conv_emtes(self.maxpool(emout))          
 		esout = self.es(x_esin * x_out_s)
-		
+		print(esout.size())
+		output = self.classifier_head(esout)
 
-		return esout
+		return output
 
 
 class CCEM(nn.Module):
