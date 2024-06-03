@@ -86,7 +86,6 @@ class MainNetworkStructure(nn.Module):
 		emout = self.em(x_emin * x_out_m)
 		x_esin = self.conv_emtes(self.maxpool(emout))          
 		esout = self.es(x_esin * x_out_s)
-		print(esout.size())
 		output = self.classifier_head(esout)
 
 		return output
