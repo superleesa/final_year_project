@@ -29,7 +29,7 @@ class TOENetDiscriminator(nn.Module):
          
 	def forward(self,x):
         
-		Fout = self.mns(x) + x
+		Fout = self.mns(x)
       
 		return Fout
 
