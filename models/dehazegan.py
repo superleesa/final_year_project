@@ -11,13 +11,13 @@ class DehazeGAN(nn.Module):
 	def __init__(self, channel):
 		super(DehazeGAN, self).__init__()
         
-		self.encoder_large = DehazeGan(channel)
-		self.encoder_medium = DehazeGan(channel*2)
-		self.encoder_small = DehazeGan(channel*4)
+		self.encoder_large = DehazeGANBlock(channel)
+		self.encoder_medium = DehazeGANBlock(channel*2)
+		self.encoder_small = DehazeGANBlock(channel*4)
 		
-		self.decoder_small = DehazeGan(channel*4)
-		self.decoder_medium = DehazeGan(channel*2)
-		self.decoder_large = DehazeGan(channel)
+		self.decoder_small = DehazeGANBlock(channel*4)
+		self.decoder_medium = DehazeGANBlock(channel*2)
+		self.decoder_large = DehazeGANBlock(channel)
         
 		self.conv_eltem = nn.Conv2d(channel,2*channel,kernel_size=1,stride=1,padding=0,bias=False)   
 		self.conv_emtes = nn.Conv2d(2*channel,4*channel,kernel_size=1,stride=1,padding=0,bias=False)
@@ -55,8 +55,9 @@ class DehazeGAN(nn.Module):
 		return x_out
 
 
-class DehazeGan:
+class DehazeGANBlock(nn.Module):
 	def __init__(self, conv_num_channels: int, emb_dim: int, num_heads: int) -> None:
+		super(DehazeGANBlock, self).__init__()
 		self.brb = BRB(conv_num_channels)
 		self.color_attention = nn.MultiheadAttention(emb_dim, num_heads)
 
