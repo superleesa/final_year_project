@@ -8,7 +8,7 @@ from pathlib import Path
 from torchmetrics.functional.image import structural_similarity_index_measure
 from tqdm import tqdm
 
-from discriminator import Discriminator
+from discriminator2 import TOENetDiscriminator as Discriminator
 
 import sys
 
