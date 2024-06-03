@@ -1,5 +1,5 @@
 denoiser_adam_lr: 1.3745488663779329e-05
-discriminator_adam_lr: 0.0003565004908213629
+discriminator_adam_lr: 1.3745488663779329e-05
 denoiser_adversarial_loss_clip_max: None
 denoiser_adversarial_loss_clip_min: None
 num_epochs: 17
