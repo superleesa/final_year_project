@@ -66,7 +66,7 @@ class MainNetworkStructure(nn.Module):
 		self.maxpool = nn.MaxPool2d(kernel_size=3,stride=2,padding=1)
 		self.classifier_head = nn.Sequential(
 			nn.Flatten(),
-			nn.Linear(408, 1),
+			nn.Linear(32*83*110, 1),
 			nn.Sigmoid(),
         )
 
