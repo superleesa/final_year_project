@@ -9,6 +9,7 @@ from torchmetrics.functional.image import structural_similarity_index_measure
 from tqdm import tqdm
 
 from discriminator2 import TOENetDiscriminator as Discriminator
+from trackers import SingelValueTracker
 
 import sys
 
@@ -40,12 +41,16 @@ def calc_denoiser_adversarial_loss(
     denoised_images_predicted_labels: torch.Tensor,
     clip_min: float | None = None,
     clip_max: float | None = None,
+    naive_adversarial_loss_tracker: SingelValueTracker | None = None,
 ) -> torch.Tensor:
     # ensure that the denoised images are classified as normal
     naive_loss = denoiser_criterion(
         denoised_images_predicted_labels,
         torch.ones_like(denoised_images_predicted_labels),
     )
+    if naive_adversarial_loss_tracker is not None:
+        with torch.no_grad():
+            naive_adversarial_loss_tracker.add_record(naive_loss.cpu().mean().item())
     if clip_min is not None and clip_max is not None:
         return torch.clip(naive_loss, clip_min, clip_max)
     return naive_loss
@@ -66,6 +71,7 @@ def calc_denoiser_loss(
     denoiser_adversarial_criterion: nn.BCELoss,
     clip_min: float | None = None,
     clip_max: float | None = None,
+    naive_adversarial_loss_tracker: SingelValueTracker | None = None,
 ) -> torch.Tensor:
     return denoiser_loss_b1 * calc_denoiser_adversarial_loss(
         denoiser_adversarial_criterion,
@@ -175,6 +181,8 @@ def train_loop(
     val_loss_computed_indices = []
     global_step_counter = 0
 
+    naive_adversarial_loss_tracker = SingelValueTracker(save_dir+"/"+"adv_loss.csv", "Naive Adversarial Loss")
+
     for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
         dataloader: DataLoader = DataLoader(
             train_datasets[epoch_idx], batch_size=batch_size, shuffle=True
@@ -203,6 +211,7 @@ def train_loop(
                 denoiser_adversarial_criterion,
                 denoiser_adversarial_loss_clip_min,
                 denoiser_adversarial_loss_clip_max,
+                naive_adversarial_loss_tracker,
             )
             denoiser_loss.backward()
             denoiser_optimizer.step()
@@ -276,6 +285,7 @@ def train_loop(
     # save
     torch.save(denoiser.state_dict(), f"{save_dir}/denoiser.pth")
     torch.save(discriminator.state_dict(), f"{save_dir}/discriminator.pth")
+    naive_adversarial_loss_tracker.dump()
     return (
         denoiser,
         (denoiser_loss_records, discriminator_loss_records),
