@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from discriminator2 import TOENetDiscriminator as Discriminator
 from trackers import SingelValueTracker
+from custom_ssim import structural_similarity_index_measure as custom_structural_similarity_index_measure
 
 import sys
 
@@ -57,8 +58,10 @@ def calc_denoiser_adversarial_loss(
 
 
 def calc_denoiser_ssim_loss(
-    predicted: torch.Tensor, true: torch.Tensor
+    predicted: torch.Tensor, true: torch.Tensor, use_only_structural_loss=True,
 ) -> torch.Tensor:
+    if use_only_structural_loss:
+        return 1 - custom_structural_similarity_index_measure(predicted, true)
     return 1 - structural_similarity_index_measure(predicted, true)
 
 
@@ -69,6 +72,7 @@ def calc_denoiser_loss(
     sand_dust_images: torch.Tensor,
     denoised_images_predicted_labels: torch.Tensor,
     denoiser_adversarial_criterion: nn.BCELoss,
+    use_only_structural_loss: bool,
     clip_min: float | None = None,
     clip_max: float | None = None,
     naive_adversarial_loss_tracker: SingelValueTracker | None = None,
@@ -79,7 +83,7 @@ def calc_denoiser_loss(
         clip_min,
         clip_max,
         naive_adversarial_loss_tracker,
-    ) + denoiser_loss_b2 * calc_denoiser_ssim_loss(denoised_images, sand_dust_images)
+    ) + denoiser_loss_b2 * calc_denoiser_ssim_loss(denoised_images, sand_dust_images, use_only_structural_loss)
 
 
 def validate_loop(
@@ -90,6 +94,7 @@ def validate_loop(
     denoiser_loss_b2: float,
     denoiser_adversarial_criterion: nn.BCELoss,
     discriminator_criterion: nn.BCELoss,
+    use_only_structural_loss: bool,
     clip_min: float | None,
     clip_max: float | None,
 ) -> tuple[float, float]:
@@ -116,6 +121,7 @@ def validate_loop(
                 sand_dust_images,
                 denoised_images_predicted_labels,
                 denoiser_adversarial_criterion,
+                use_only_structural_loss,
                 clip_min,
                 clip_max,
             )
@@ -152,6 +158,7 @@ def train_loop(
     discriminator_adam_lr: float,
     denoiser_loss_b1: float,
     denoiser_loss_b2: float,
+    use_only_structural_loss: bool,
     denoiser_adversarial_loss_clip_min: float | None,
     denoiser_adversarial_loss_clip_max: float | None,
     print_loss_interval: int,
@@ -210,6 +217,7 @@ def train_loop(
                 sand_dust_images,
                 denoised_images_predicted_labels,
                 denoiser_adversarial_criterion,
+                use_only_structural_loss,
                 denoiser_adversarial_loss_clip_min,
                 denoiser_adversarial_loss_clip_max,
                 naive_adversarial_loss_tracker,
@@ -261,6 +269,7 @@ def train_loop(
             denoiser_loss_b2,
             denoiser_adversarial_criterion,
             discriminator_adversarial_criterion,
+            use_only_structural_loss,
             denoiser_adversarial_loss_clip_min,
             denoiser_adversarial_loss_clip_max,
         )
