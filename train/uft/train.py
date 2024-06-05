@@ -236,6 +236,7 @@ def train_loop(
             normal_images_predicted_labels = discriminator(clear_images).flatten()
 
             # we cannot use denoised_images_predicted_labels above because gradients are different
+            # so we feed in the same set of denoised images into the discriminator again
             denoised_images_predicted_labels_for_discriminator = discriminator(
                 denoised_images.detach()
             ).flatten()
