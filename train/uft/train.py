@@ -215,16 +215,16 @@ def train_loop(
             denoised_images_predicted_labels = discriminator(denoised_images).flatten()
 
             denoiser_loss = calc_denoiser_loss(
-                denoiser_loss_b1,
-                denoiser_loss_b2,
-                denoised_images,
-                sand_dust_images,
-                denoised_images_predicted_labels,
-                denoiser_adversarial_criterion,
-                use_only_structural_loss,
-                denoiser_adversarial_loss_clip_min,
-                denoiser_adversarial_loss_clip_max,
-                naive_adversarial_loss_tracker,
+                denoiser_loss_b1=denoiser_loss_b1,
+                denoiser_loss_b2=denoiser_loss_b2,
+                denoised_images=denoised_images,
+                sand_dust_images=sand_dust_images,
+                denoised_images_predicted_labels=denoised_images_predicted_labels,
+                denoiser_adversarial_criterion=denoiser_adversarial_criterion,
+                use_only_structural_loss=use_only_structural_loss,
+                clip_min=denoiser_adversarial_loss_clip_min,
+                clip_max=denoiser_adversarial_loss_clip_max,
+                naive_adversarial_loss_tracker=naive_adversarial_loss_tracker,
             )
             denoiser_loss.backward()
             denoiser_optimizer.step()
@@ -241,8 +241,8 @@ def train_loop(
             ).flatten()
             discriminator_loss = calc_discriminator_loss(
                 discriminator_adversarial_criterion,
-                denoised_images_predicted_labels_for_discriminator,
-                normal_images_predicted_labels,
+                denoised_images_predicted=denoised_images_predicted_labels_for_discriminator,
+                normal_images_predicted=normal_images_predicted_labels,
             )
 
             discriminator_loss.backward()
