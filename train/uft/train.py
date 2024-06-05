@@ -9,7 +9,7 @@ from torchmetrics.functional.image import structural_similarity_index_measure
 from tqdm import tqdm
 
 from discriminator2 import TOENetDiscriminator as Discriminator
-from trackers import SingelValueTracker
+from trackers import SingelValueTracker, Tracker
 from custom_ssim import structural_similarity_index_measure as custom_structural_similarity_index_measure
 
 import sys
@@ -163,7 +163,8 @@ def train_loop(
     denoiser_adversarial_loss_clip_max: float | None,
     print_loss_interval: int,
     calc_eval_loss_interval: int,
-    early_stopping_patience: int
+    early_stopping_patience: int,
+    track_adv_loss: bool = False
 ) -> tuple[
     TOENet, tuple[list[float], list[float]], tuple[list[int], list[float], list[float]]
 ]:
@@ -189,7 +190,10 @@ def train_loop(
     val_loss_computed_indices = []
     global_step_counter = 0
 
-    naive_adversarial_loss_tracker = SingelValueTracker(save_dir+"/"+"adv_loss.csv", "Naive Adversarial Loss")
+    if track_adv_loss:
+        naive_adversarial_loss_tracker = SingelValueTracker(save_dir+"/"+"adv_loss.csv", "Naive Adversarial Loss")
+    else:
+        naive_adversarial_loss_tracker = None
 
     for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
         dataloader: DataLoader = DataLoader(
@@ -295,7 +299,9 @@ def train_loop(
     # save
     torch.save(denoiser.state_dict(), f"{save_dir}/denoiser.pth")
     torch.save(discriminator.state_dict(), f"{save_dir}/discriminator.pth")
-    naive_adversarial_loss_tracker.dump()
+    if isinstance(naive_adversarial_loss_tracker, Tracker):
+        naive_adversarial_loss_tracker.dump()
+    
     return (
         denoiser,
         (denoiser_loss_records, discriminator_loss_records),
