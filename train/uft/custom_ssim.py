@@ -150,6 +150,8 @@ def _ssim_update(
 
     input_list = torch.cat((preds, target, preds * preds, target * target, preds * target))  # (5 * B, C, H, W)
 
+    # (5*B, num_filters=1, num_shifts_horizontal, num_shift_vertical) ??
+    # groups param ensure statistics (mean, var, cov) are calculated independent of the RGB channel
     outputs = F.conv3d(input_list, kernel, groups=channel) if is_3d else F.conv2d(input_list, kernel, groups=channel)
 
     output_list = outputs.split(preds.shape[0])
@@ -159,10 +161,13 @@ def _ssim_update(
     mu_pred_target = output_list[0] * output_list[1]
 
     c3 = c2/2
+    
+    # this uses the equation: Var[X] = E[X^2] - E[X]^2
     sigma_pred = torch.sqrt(torch.clamp(output_list[2] - mu_pred_sq, min=0.0)).to(dtype)
     sigma_target = torch.sqrt(torch.clamp(output_list[3] - mu_target_sq, min=0.0)).to(dtype)
+    sigma_pred_target = (output_list[4] - mu_pred_target).to(dtype)  # Covariance
 
-    ssim_idx_full_image = (sigma_pred_target.to(dtype) + c3) / (sigma_pred*sigma_target + c3)
+    ssim_idx_full_image = (sigma_pred_target + c3) / (sigma_pred*sigma_target + c3)
 
     if is_3d:
         ssim_idx = ssim_idx_full_image[..., pad_h:-pad_h, pad_w:-pad_w, pad_d:-pad_d]
