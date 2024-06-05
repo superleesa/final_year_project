@@ -102,8 +102,8 @@ def validate_loop(
     denoiser.eval()
     discriminator.eval()
 
-    denoiser_loss_mean = 0
-    discriminator_loss_mean = 0
+    denoiser_loss_mean = 0.0
+    discriminator_loss_mean = 0.0
 
     for batch_idx, (sand_dust_images, clear_images) in tqdm(enumerate(val_dataloader)):
         sand_dust_images, clear_images = sand_dust_images.cuda(), clear_images.cuda()
