@@ -47,7 +47,7 @@ def calc_denoiser_adversarial_loss(
     # ensure that the denoised images are classified as normal
     naive_loss = denoiser_criterion(
         denoised_images_predicted_labels,
-        torch.ones_like(denoised_images_predicted_labels),
+        torch.zeros_like(denoised_images_predicted_labels),
     )
     if naive_adversarial_loss_tracker is not None:
         with torch.no_grad():
