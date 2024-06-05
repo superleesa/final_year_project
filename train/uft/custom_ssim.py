@@ -158,16 +158,12 @@ def _ssim_update(
     mu_target_sq = output_list[1].pow(2)
     mu_pred_target = output_list[0] * output_list[1]
 
-    sigma_pred_sq = output_list[2] - mu_pred_sq
-    sigma_target_sq = output_list[3] - mu_target_sq
-    sigma_pred_target = output_list[4] - mu_pred_target
+    c3 = c2/2
+    sigma_pred = torch.sqrt(output_list[2] - mu_pred_sq).to(dtype)
+    sigma_target = torch.sqrt(output_list[3] - mu_target_sq).to(dtype)
+    sigma_pred_target = (output_list[4] - mu_pred_target).to(dtype)
 
-    upper = 2 * sigma_pred_target.to(dtype) + c2
-    lower = (sigma_pred_sq + sigma_target_sq).to(dtype) + c2
-
-    # ssim_idx_full_image = ((2 * mu_pred_target + c1) * upper) / ((mu_pred_sq + mu_target_sq + c1) * lower)
-    (sigma_pred_target.to(dtype) + c3) / 
-    ssim_idx_full_image = ((2 * mu_pred_target + c1) * upper) / ((mu_pred_sq + mu_target_sq + c1) * lower)
+    ssim_idx_full_image = (sigma_pred_target.to(dtype) + c3) / (sigma_pred*sigma_target + c3)
 
     if is_3d:
         ssim_idx = ssim_idx_full_image[..., pad_h:-pad_h, pad_w:-pad_w, pad_d:-pad_d]
