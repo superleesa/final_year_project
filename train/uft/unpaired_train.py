@@ -30,6 +30,7 @@ def load_params_from_yml(config_path: str | Path) -> dict:
         "denoiser_loss_b2": config["denoiser_loss_b2"],
         "batch_size": config["batch_size"],
         "num_epochs": config["num_epochs"],
+        "use_only_structural_loss": config["use_only_structural_loss"],
         "print_loss_interval": config["print_loss_interval"],
         "calc_eval_loss_interval": config["calc_eval_loss_interval"],
         "denoiser_adversarial_loss_clip_min": config.get("clip_min"),

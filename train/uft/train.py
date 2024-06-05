@@ -8,7 +8,9 @@ from pathlib import Path
 from torchmetrics.functional.image import structural_similarity_index_measure
 from tqdm import tqdm
 
-from discriminator import Discriminator
+from discriminator2 import TOENetDiscriminator as Discriminator
+from trackers import SingelValueTracker, Tracker
+from custom_ssim import structural_similarity_index_measure as custom_structural_similarity_index_measure
 
 import sys
 
@@ -40,20 +42,26 @@ def calc_denoiser_adversarial_loss(
     denoised_images_predicted_labels: torch.Tensor,
     clip_min: float | None = None,
     clip_max: float | None = None,
+    naive_adversarial_loss_tracker: SingelValueTracker | None = None,
 ) -> torch.Tensor:
     # ensure that the denoised images are classified as normal
     naive_loss = denoiser_criterion(
         denoised_images_predicted_labels,
-        torch.ones_like(denoised_images_predicted_labels),
+        torch.zeros_like(denoised_images_predicted_labels),
     )
+    if naive_adversarial_loss_tracker is not None:
+        with torch.no_grad():
+            naive_adversarial_loss_tracker.add_record(naive_loss.cpu().mean().item())
     if clip_min is not None and clip_max is not None:
         return torch.clip(naive_loss, clip_min, clip_max)
     return naive_loss
 
 
 def calc_denoiser_ssim_loss(
-    predicted: torch.Tensor, true: torch.Tensor
+    predicted: torch.Tensor, true: torch.Tensor, use_only_structural_loss=True,
 ) -> torch.Tensor:
+    if use_only_structural_loss:
+        return 1 - custom_structural_similarity_index_measure(predicted, true)
     return 1 - structural_similarity_index_measure(predicted, true)
 
 
@@ -64,15 +72,18 @@ def calc_denoiser_loss(
     sand_dust_images: torch.Tensor,
     denoised_images_predicted_labels: torch.Tensor,
     denoiser_adversarial_criterion: nn.BCELoss,
+    use_only_structural_loss: bool,
     clip_min: float | None = None,
     clip_max: float | None = None,
+    naive_adversarial_loss_tracker: SingelValueTracker | None = None,
 ) -> torch.Tensor:
     return denoiser_loss_b1 * calc_denoiser_adversarial_loss(
         denoiser_adversarial_criterion,
         denoised_images_predicted_labels,
         clip_min,
         clip_max,
-    ) + denoiser_loss_b2 * calc_denoiser_ssim_loss(denoised_images, sand_dust_images)
+        naive_adversarial_loss_tracker,
+    ) + denoiser_loss_b2 * calc_denoiser_ssim_loss(denoised_images, sand_dust_images, use_only_structural_loss)
 
 
 def validate_loop(
@@ -83,6 +94,7 @@ def validate_loop(
     denoiser_loss_b2: float,
     denoiser_adversarial_criterion: nn.BCELoss,
     discriminator_criterion: nn.BCELoss,
+    use_only_structural_loss: bool,
     clip_min: float | None,
     clip_max: float | None,
 ) -> tuple[float, float]:
@@ -90,8 +102,8 @@ def validate_loop(
     denoiser.eval()
     discriminator.eval()
 
-    denoiser_loss_mean = 0
-    discriminator_loss_mean = 0
+    denoiser_loss_mean = 0.0
+    discriminator_loss_mean = 0.0
 
     for batch_idx, (sand_dust_images, clear_images) in tqdm(enumerate(val_dataloader)):
         sand_dust_images, clear_images = sand_dust_images.cuda(), clear_images.cuda()
@@ -109,6 +121,7 @@ def validate_loop(
                 sand_dust_images,
                 denoised_images_predicted_labels,
                 denoiser_adversarial_criterion,
+                use_only_structural_loss,
                 clip_min,
                 clip_max,
             )
@@ -145,11 +158,13 @@ def train_loop(
     discriminator_adam_lr: float,
     denoiser_loss_b1: float,
     denoiser_loss_b2: float,
+    use_only_structural_loss: bool,
     denoiser_adversarial_loss_clip_min: float | None,
     denoiser_adversarial_loss_clip_max: float | None,
     print_loss_interval: int,
     calc_eval_loss_interval: int,
-    early_stopping_patience: int
+    early_stopping_patience: int,
+    track_adv_loss: bool = False
 ) -> tuple[
     TOENet, tuple[list[float], list[float]], tuple[list[int], list[float], list[float]]
 ]:
@@ -175,6 +190,11 @@ def train_loop(
     val_loss_computed_indices = []
     global_step_counter = 0
 
+    if track_adv_loss:
+        naive_adversarial_loss_tracker = SingelValueTracker(save_dir+"/"+"adv_loss.csv", "Naive Adversarial Loss")
+    else:
+        naive_adversarial_loss_tracker = None
+
     for epoch_idx in tqdm(range(num_epochs), desc="epoch"):
         dataloader: DataLoader = DataLoader(
             train_datasets[epoch_idx], batch_size=batch_size, shuffle=True
@@ -195,14 +215,16 @@ def train_loop(
             denoised_images_predicted_labels = discriminator(denoised_images).flatten()
 
             denoiser_loss = calc_denoiser_loss(
-                denoiser_loss_b1,
-                denoiser_loss_b2,
-                denoised_images,
-                sand_dust_images,
-                denoised_images_predicted_labels,
-                denoiser_adversarial_criterion,
-                denoiser_adversarial_loss_clip_min,
-                denoiser_adversarial_loss_clip_max,
+                denoiser_loss_b1=denoiser_loss_b1,
+                denoiser_loss_b2=denoiser_loss_b2,
+                denoised_images=denoised_images,
+                sand_dust_images=sand_dust_images,
+                denoised_images_predicted_labels=denoised_images_predicted_labels,
+                denoiser_adversarial_criterion=denoiser_adversarial_criterion,
+                use_only_structural_loss=use_only_structural_loss,
+                clip_min=denoiser_adversarial_loss_clip_min,
+                clip_max=denoiser_adversarial_loss_clip_max,
+                naive_adversarial_loss_tracker=naive_adversarial_loss_tracker,
             )
             denoiser_loss.backward()
             denoiser_optimizer.step()
@@ -214,13 +236,14 @@ def train_loop(
             normal_images_predicted_labels = discriminator(clear_images).flatten()
 
             # we cannot use denoised_images_predicted_labels above because gradients are different
+            # so we feed in the same set of denoised images into the discriminator again
             denoised_images_predicted_labels_for_discriminator = discriminator(
                 denoised_images.detach()
             ).flatten()
             discriminator_loss = calc_discriminator_loss(
                 discriminator_adversarial_criterion,
-                denoised_images_predicted_labels_for_discriminator,
-                normal_images_predicted_labels,
+                denoised_images_predicted=denoised_images_predicted_labels_for_discriminator,
+                normal_images_predicted=normal_images_predicted_labels,
             )
 
             discriminator_loss.backward()
@@ -251,6 +274,7 @@ def train_loop(
             denoiser_loss_b2,
             denoiser_adversarial_criterion,
             discriminator_adversarial_criterion,
+            use_only_structural_loss,
             denoiser_adversarial_loss_clip_min,
             denoiser_adversarial_loss_clip_max,
         )
@@ -276,6 +300,9 @@ def train_loop(
     # save
     torch.save(denoiser.state_dict(), f"{save_dir}/denoiser.pth")
     torch.save(discriminator.state_dict(), f"{save_dir}/discriminator.pth")
+    if isinstance(naive_adversarial_loss_tracker, Tracker):
+        naive_adversarial_loss_tracker.dump()
+    
     return (
         denoiser,
         (denoiser_loss_records, discriminator_loss_records),
