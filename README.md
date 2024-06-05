@@ -1,4 +1,4 @@
-# DehazeGAN: Sand-Dust Image Restoration using Transformer-based Denoiser and Adversarial Learning
+# DehazeGAN: Sand-Dust Image Restoration using Adversarial Learning
 
 ## how to start
 1. install packages in requirements.txt
