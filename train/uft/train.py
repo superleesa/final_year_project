@@ -78,6 +78,7 @@ def calc_denoiser_loss(
         denoised_images_predicted_labels,
         clip_min,
         clip_max,
+        naive_adversarial_loss_tracker,
     ) + denoiser_loss_b2 * calc_denoiser_ssim_loss(denoised_images, sand_dust_images)
 
 
