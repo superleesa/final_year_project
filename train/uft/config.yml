@@ -8,8 +8,7 @@ step_lr_gamma: 0.1
 batch_size: 4
 print_loss_interval: 107
 calc_eval_loss_interval: 381
-denoiser_loss_b1: 0.48803387886673455
-denoiser_loss_b2: 0.51196612113
+use_only_structural_loss: true
 early_stopping_patience: 5
 checkpoint_path: "/home/student/Documents/mds12/sho/final_year_project/src/toenet/checkpoint/checkpoint.pth.tar"
 images_dir: "/home/student/Documents/mds12/sho/final_year_project/Data/unpaired"
