@@ -161,10 +161,11 @@ def _ssim_update(
     mu_pred_target = output_list[0] * output_list[1]
 
     c3 = c2/2
-    
+    eps = 1e-8  # to avoid nans
+
     # this uses the equation: Var[X] = E[X^2] - E[X]^2
-    sigma_pred = torch.sqrt(torch.clamp(output_list[2] - mu_pred_sq, min=0.0)).to(dtype)
-    sigma_target = torch.sqrt(torch.clamp(output_list[3] - mu_target_sq, min=0.0)).to(dtype)
+    sigma_pred = torch.sqrt((output_list[2] - mu_pred_sq).clamp(eps).to(dtype))
+    sigma_target = torch.sqrt((output_list[3] - mu_target_sq).clamp(eps).to(dtype))
     sigma_pred_target = (output_list[4] - mu_pred_target).to(dtype)  # Covariance
 
     ssim_idx_full_image = (sigma_pred_target + c3) / (sigma_pred*sigma_target + c3)
