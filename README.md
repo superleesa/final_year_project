@@ -42,7 +42,7 @@ This installation applies to device that does not have GPU. In this case, you ne
 1. Download the installer for Anydesk (targeted to your platform) from https://anydesk.com/en/downloads. 
 2. Open the executable and enter the appropriate remote address and its password. Make sure the host desktop has the specifications as mentioned in Installation Prerequisites above.
 
-# Running the Web Application
+## Running the Web Application
 After you ensure that you meet all the Installation Prerequisites above, please follow these steps to run the application.
 1. In the terminal, clone a repository for our project from GitHub using git command 
 ```sh
@@ -55,10 +55,10 @@ pip install -r requirements.txt.
 3. Run the flask application using the command ```python app/app.py``` or ```python3.10 app/app.py```.
 4. In a browser, go to http://localhost:5000/ and you should see our application UI.
 
-# Training Guidelines
-For training of the dataset, we would need to install the SIE Dataset from Google Drive [LINK]().
+## Training Guidelines
+For training of the dataset, we would need to download the SIE Dataset. The paper on the SIE Dataset can be found here: [LINK](https://link.springer.com/article/10.1007/s00371-022-02448-8). The SIE Dataset should be downloaded to the ```Data``` folder, in the format of the Data DIrectory Structure below.
 
-## Data Directory Structure
+### Data Directory Structure
 ```
 Data/
 └── paired/
@@ -81,9 +81,44 @@ Data/
         └── ...
 
 ```
+### Training of Model
+We follow the training pipeline as illustrated below:
+![Training Pipeline](docs/training_pipeline.png)
 
-## Usage
+#### Unsupervised Finetuning Training (UFT)
+1. Open the terminal.
+2. Navigate to the directory of UFT using command ```cd train/uft```
+3. Run the command ```python unpaired_train.py```.
+4. The model would be stored in xxx.
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+#### Supervised Finetuning Training (SFT)
+1. Open the terminal.
+2. Navigate to the directory of SFT using command ```cd train/sft/toenet_base```
+3. Run the command ```python paired_train.py```.
+4. THe model would be stored in xxx.
+
+## Evaluation Guidelines
+After the training of the model, we could evaluate the performance of the model using metrics such as PSNR and SSIM.
+1. Open the terminal.
+2. Navigate to the directory of evaluation using command ```cd evaluation```
+3. Run the command ```python eval.py```.
+4. The output of the average of the metrics would be stored in a yaml file in the save directory.
+
+## Results
+### Metrics Comparison with the Other Models
+![Comparison with the other models](docs/results_1.png)
+
+### Color Histogram Comparison with Other Models
+![Color Histogram](docs/model_comparisons_ver0.2.png)
+
+## Acknowledgements
+The base model of our project is based on the [TOENet] (https://github.com/YuanGao-YG/TOENet).
+
+
+
+
+
+
+
 
 
