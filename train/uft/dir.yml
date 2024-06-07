@@ -1,0 +1,5 @@
+checkpoint_path: /home/student/Documents/mds12/winnie/final_year_project/src/toenet/checkpoint/checkpoint.pth.tar
+images_dir: /home/student/Documents/mds12/winnie/final_year_project/Data/unpaired
+save_dir: /home/student/Documents/mds12/winnie/final_year_project/Data/output
+eval_dir: /home/student/Documents/mds12/winnie/final_year_project/Data/Synthetic_images
+train_ratio: 0.7

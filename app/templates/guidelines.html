@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Power-Denoise</title>
+    <link href='https://fonts.googleapis.com/css?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="{{url_for('static',filename='styles.css')}}" />
+</head>
+
+<body>
+    <header>
+        <a class="logo" href="/"><img src="static/power_denoise_logo.png" alt="logo"></a>
+        <nav>
+            <ul class="nav__links">
+                <li><a href="{{url_for('index')}}">DehazeGAN</a></li>
+                <li><a href="{{url_for('guidelines')}}">Guidelines</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="guide-container">
+        <h1 id="title">Important Notes</h1>
+        <ul>
+            <li>The Power Denoise web application could only be used on devices with GPU. If your device does not have GPU, please seek assistance from the project team.</li>
+            <li>Only one image is accepted at once.</li>
+            <li>Remember to download your image once denoised. Once the page refreshes, the input and output would be erased.</li>
+        </ul>
+        <h1 id="title">Image Guidelines</h1>
+        <ul>
+            <li>The image input is expected to be a sandstorm image.</li>
+            <li>Acceptable image formats: *.bmp, *.dib; *.jpeg, *.jpg, *.jpe; *.jp2; *.png; *.webp; *.avif; *.pbm, *.pgm, *.ppm, *.pxm, *.pnm; *.pfm; *.sr, *.ras; *.tiff, *.tif; *.exr; *.hdr, *.pic; Raster and Vector geospatial data supported by GDAL.
+            </li>
+            <li>Individual image files should not exceed 10 MB.</li>
+            <li>Maintain the original aspect ratio of the image.</li>
+            <li>Remove any watermarks or text overlays from the image.</li>
+        </ul>
+        <h1 id="title">Steps</h1>
+        <ul>
+            <li>Go to DehazeGAN navigation tab</li>
+            <li>Click on upload image. Make sure the image uploaded is as per the "Image Guidelines" set above.</li>
+            <li>A preview of the image uploaded would be shown. Once confirmed, click on Denoise.</li>
+            <li>You can download your image by clicking on the Download button. If you do not download your image, your image would be erased once the page reloads.</li>
+        </ul>
+    </div>
+</body>
+
+</html>
