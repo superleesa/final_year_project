@@ -61,11 +61,29 @@ We follow the training pipeline as illustrated below:
 See [README.md](evaluation/README.md) for Evaluation Guidelines.
 
 ## Results
-### Metrics Comparison with the Other Models
-![Comparison with the other models](docs/results_1.png)
+<details>
+<summary><b>Metrics Comparison with Other Models</b></summary>
 
-### Color Histogram Comparison with Other Models
+![Comparison with the other models](docs/results_1.png)
+</details>
+
+<details>
+<summary><b>Image Color Histogram Comparison with Other Models</b></summary>
+
 ![Color Histogram](docs/model_comparisons_ver0.2.png)
+</details>
+
+<details>
+<summary><b>Paired Synthetic Image Comparison with Other Models</b></summary>
+
+![Paired Synthetic Image Comparison](docs/paired_compare.png)
+</details>
+
+<details>
+<summary><b>Unpaired Real-world Image Comparison with Other Models</b></summary>
+
+![Unpaired Synthetic Image Comparison](docs/unpaired_compare.png)
+</details>
 
 ## Acknowledgements
 The base model of our project is based on the [TOENet] (https://github.com/YuanGao-YG/TOENet).
